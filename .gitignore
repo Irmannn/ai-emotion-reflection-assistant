@@ -33,3 +33,6 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Office temporary files
+~$*

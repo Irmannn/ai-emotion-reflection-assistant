@@ -19,6 +19,7 @@ The project goal is to help a frontend developer transition toward LLM / Agent a
 - Do not push to GitHub unless the user explicitly asks for a push.
 - It is fine to create or edit files locally when implementing an approved task.
 - Before any commit, show the current changed files and summarize the intended commit content.
+- Use Chinese commit messages unless the user explicitly asks for another language.
 
 ## Project Boundaries
 

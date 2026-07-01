@@ -13,7 +13,7 @@
 
 ## 当前阶段
 
-项目按阶段推进，当前准备从阶段 1 开始：
+项目按阶段推进，当前处于阶段 1：项目骨架。
 
 - 创建前端 Next.js 项目结构
 - 创建后端 FastAPI 项目结构
@@ -26,7 +26,78 @@
 
 ## 项目资料
 
-- `AI 情绪复盘助手 MVP PRD.docx`：产品需求文档
-- `Codex开发指令.docx`：阶段化开发要求
+- `docs/PRD.md`：产品需求文档
+- `docs/DEVELOPMENT_PLAN.md`：阶段化开发要求
+- `LEARNING_NOTES.md`：学习疑问、阶段复盘和项目笔记
 - `learing-road-overview.png`：学习路线图
 - `tk-learning-method.png`：自学方法参考
+
+## 项目结构
+
+```text
+.
+├── frontend/               # Next.js 前端
+├── backend/                # FastAPI 后端
+├── docs/                   # PRD 和阶段开发计划
+├── AGENTS.md               # Codex 协作规则
+├── LEARNING_NOTES.md       # 学习笔记
+└── README.md
+```
+
+## 环境要求
+
+- Node.js 20+
+- npm 10+
+- Python 3.11+
+- pip / venv
+
+当前前端和后端是两个独立服务，本地开发时需要分别启动。
+
+## 启动前端
+
+```bash
+cd frontend
+nvm use 20
+npm install
+npm run dev
+```
+
+浏览器打开：
+
+```text
+http://localhost:3000
+```
+
+## 启动后端
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+健康检查：
+
+```bash
+curl http://localhost:8000/health
+```
+
+预期返回：
+
+```json
+{"status":"ok"}
+```
+
+## 阶段 1 验收标准
+
+- 前端页面可以通过 `http://localhost:3000` 打开
+- 后端 `GET /health` 返回 `{"status":"ok"}`
+- README 写清楚前后端启动方式
+
+## 当前本机环境备注
+
+- 仓库包含 `.nvmrc`，前端应使用 Node.js 20。
+- 如果当前 shell 默认是 Node.js 16，请先执行 `nvm use 20`。
+- 如果创建 Python 虚拟环境时报 `ensurepip is not available`，需要先安装系统包 `python3.12-venv`。

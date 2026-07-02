@@ -65,6 +65,7 @@
 | FastAPI 如何组织路由、模型和数据库代码？ | 阶段 1 先用 `backend/app/main.py` 作为入口，后续接口变多后再拆分 routes、models、database。 | 阶段 1-2 | 进行中 |
 | Python 里的 `"""..."""` 是注释吗？ | 三个双引号包起来的是字符串。放在模块、函数或类开头时，通常作为 docstring（文档字符串），用于说明这个模块/函数/类的用途。普通注释使用 `#`。 | 阶段 1 | 已记录 |
 | `__init__.py` 是做什么的？ | `__init__.py` 用来标记当前目录是一个 Python package。本项目里 `backend/app/__init__.py` 表示 `app/` 是包，所以可以用 `app.main` 表示 `app` 包里的 `main.py` 模块。现代 Python 有 namespace package，但初学项目保留 `__init__.py` 更清晰、更兼容。 | 阶段 1 | 已记录 |
+| `routers/__init__.py` 和 `routers/__pycache__` 有什么区别？ | `routers/__init__.py` 是源码文件，用来标记 `routers/` 是 Python package，支持 `from app.routers import reflections` 这类导入，应该提交；`routers/__pycache__/` 是 Python 运行/导入模块时自动生成的字节码缓存目录，不是源码，不需要看，也不提交。 | 阶段 2 | 已记录 |
 | `app.add_middleware(...)` 是什么意思？ | `add_middleware` 不是项目里自定义的函数，而是 `FastAPI()` 创建出来的 app 对象自带的方法。middleware 是请求进入路由函数前、响应返回浏览器前经过的一层处理逻辑。本项目用 `CORSMiddleware` 处理跨域，允许 `http://localhost:3000` 的前端请求后端。 | 阶段 1 | 已记录 |
 | Python 和 JavaScript 是面向对象还是面向过程？ | 两者都是多范式语言，都支持面向过程、面向对象和函数式写法。不能简单说 Python 是面向对象、JavaScript 是面向过程；实际项目中主要写法通常由框架决定，例如 React 常见函数式/声明式风格，FastAPI 里会看到 `app` 对象及其方法。 | 阶段 1 | 已记录 |
 | FastAPI 里的 `@app.get("/health")` 是什么意思？ | 这是 Python 装饰器写法。装饰器可以在不改函数内部代码的情况下给函数附加能力。在 FastAPI 中，`@app.get("/health")` 表示把下面的函数注册成 `GET /health` 接口；当请求进来时，FastAPI 会执行这个函数。 | 阶段 1 | 已记录 |
@@ -81,6 +82,46 @@
 | `sudo apt install python3.12-venv` 是什么意思？ | `sudo` 表示用管理员权限执行命令；`apt` 是 Ubuntu/Debian 的系统包管理器；`install` 表示安装系统软件包；`python3.12-venv` 是 Python 3.12 创建虚拟环境所需的系统包。它和 `pip install` 不同：`apt` 安装系统级软件包，`pip` 安装 Python 项目依赖。 | 阶段 1 | 已记录 |
 | `__pycache__` 是什么？ | `__pycache__` 是 Python 运行时自动生成的缓存目录，里面放 `.py` 编译后的字节码文件，例如 `main.cpython-312.pyc`。它可以加快模块加载，但不是源码，不需要提交到 GitHub，已通过 `.gitignore` 忽略。删除它不影响项目，下次运行 Python 可能会重新生成。 | 阶段 1 | 已记录 |
 | `.venv` 是什么？ | `.venv` 是当前后端项目的 Python 虚拟环境目录，里面包含项目自己的 Python、pip、激活脚本和通过 `requirements.txt` 安装的第三方包。它是本地生成环境，不提交 GitHub；删除后可以通过 `python3 -m venv .venv` 和 `python -m pip install -r requirements.txt` 重建。现阶段不需要深究 `.venv` 内部文件。 | 阶段 1 | 已记录 |
+| ORM 工具是什么意思？ | ORM 是 Object-Relational Mapping，对象关系映射。它的作用是用 Python 类和对象来表达数据库表和记录，减少手写 SQL。例如用 `ReflectionRecord` 类表示 `reflection_records` 表，用 `select(ReflectionRecord)` 查询记录。阶段 2 使用 SQLModel 作为 ORM。 | 阶段 2 | 已记录 |
+| `models.py` 是做什么的？ | `models.py` 用来定义数据库表结构的 Python 表达。本项目里 `ReflectionRecord(SQLModel, table=True)` 对应 SQLite 里的 `reflection_records` 表；类属性对应表字段；字段类型和 `Field(...)` 配置共同决定数据库字段规则。 | 阶段 2 | 已记录 |
+| SQLModel 里的 `Field(...)` 是什么？ | 字段类型声明负责说明字段是什么类型，例如 `id: int | None`；`Field(...)` 负责给字段添加数据库/校验配置，例如 `primary_key=True` 表示主键，`index=True` 表示建索引，`nullable=False` 表示不能为空，`default` 或 `default_factory` 表示默认值规则。 | 阶段 2 | 已记录 |
+| 建索引有什么作用？ | 索引可以理解成数据库为某个字段建立的目录。没有索引时，按 `session_id` 查询可能需要逐行扫描整张表；有索引时，数据库可以先查目录，快速定位相关记录。本项目经常按 `session_id` 查询历史记录，所以给 `session_id` 建索引。 | 阶段 2 | 已记录 |
+| `default_factory` 和 `default` 有什么区别？ | `default=utc_now()` 会在类定义加载时立即调用一次函数，后续可能复用同一个默认值；`default_factory=utc_now` 传入的是函数本身，不带括号，表示每次创建新记录需要默认值时再调用函数。时间字段应使用 `default_factory`，避免多条记录拿到同一个启动时刻。 | 阶段 2 | 已记录 |
+| UTC 是什么，中国时区怎么表示？ | UTC 是 Coordinated Universal Time，协调世界时，是全球统一时间基准，不是时间戳。`datetime.now(timezone.utc)` 返回带 UTC 时区信息的 datetime。中国大陆通常使用 UTC+8，也就是 Asia/Shanghai；如果要生成中国时区时间，可以使用 `datetime.now(ZoneInfo("Asia/Shanghai"))`。数据库里通常建议存 UTC，展示时再转本地时区。 | 阶段 2 | 已记录 |
+| SQLite 的 `check_same_thread=False` 是为什么？ | SQLite 默认要求一个连接只能在创建它的线程中使用；FastAPI/uvicorn 处理同步接口时可能把请求放在线程池中执行，因此同一个数据库连接相关操作可能跨线程触发检查错误。`check_same_thread=False` 关闭 SQLite 的同线程检查，是 FastAPI + SQLite 的常见配置。它不表示可以随意共享状态，项目仍通过每次请求创建独立 Session 来管理数据库操作。 | 阶段 2 | 已记录 |
+| `engine`、`connection`、`Session`、`thread` 是什么关系？ | `engine` 是应用级数据库入口/连接工厂；`connection` 是更底层、真正和 SQLite 文件通信的数据库连接；`Session` 是 ORM 层的一次数据库操作会话，业务代码通过 `session.add/exec/commit` 操作数据库，Session 内部会通过 engine 使用底层 connection；`thread` 是执行 Python 代码的线程，不是数据库对象。请求流程可理解为：某个 thread 执行接口函数 -> FastAPI 通过 `get_session()` 创建 `Session(engine)` -> 接口用 Session 操作数据库。 | 阶段 2 | 已记录 |
+| `check_same_thread=False` 配的是 Session 吗？ | 不是。它是传给 SQLite 底层 connection 的配置，表示不强制要求连接只能在创建它的线程中使用。业务代码仍然不直接操作 connection，而是通过 SQLModel/SQLAlchemy 的 Session 操作数据库。 | 阶段 2 | 已记录 |
+| `with Session(engine) as session` 是什么语法？ | `with ... as ...` 是 Python 上下文管理器语法，用来管理需要打开/关闭的资源。`with Session(engine) as session` 表示创建一个数据库 Session，并在离开 `with` 代码块时自动关闭它，类似 `with open(...) as f` 会自动关闭文件。 | 阶段 2 | 已记录 |
+| `yield session` 在 `get_session()` 里是什么意思？ | `yield session` 表示把数据库 session 暂时交给 FastAPI 接口使用。请求进来时 FastAPI 调用 `get_session()`，拿到 `yield` 出来的 session，接口用它查库/写库；接口执行结束后回到 `get_session()`，离开 `with` 代码块并自动关闭 session。 | 阶段 2 | 已记录 |
+| `def get_session() -> Generator[Session, None, None]` 怎么理解？ | `def get_session()` 定义无参数函数；`->` 是返回类型标注；因为函数内部用了 `yield`，所以它返回生成器。`Generator[Session, None, None]` 三个参数分别表示：yield 出去的是 `Session`；不接收外部 send 进来的值；最终没有特殊 return 值。阶段 2 可简化理解为：这个函数会 yield 一个数据库 Session 给 FastAPI 使用。 | 阶段 2 | 已记录 |
+| `models.py` 和 `schemas.py` 有什么区别？ | `models.py` 面向数据库，定义真实表结构，例如 `ReflectionRecord(SQLModel, table=True)` 会映射成 SQLite 表；`schemas.py` 面向 API，定义请求体和响应体结构，例如创建记录时前端要传什么字段、接口返回什么字段。简单记：models 关心怎么存，schemas 关心怎么收和怎么返。 | 阶段 2 | 已记录 |
+| `class ReflectionCreate(SQLModel):` 是什么？ | 这是定义一个继承自 `SQLModel` 的普通数据模型，用于请求体验证、类型检查和接口文档生成。因为它没有 `table=True`，所以不会创建数据库表。FastAPI 会用它解析和校验创建记录接口的 JSON 请求体。 | 阶段 2 | 已记录 |
+| `table=True` 和没有 `table=True` 有什么区别？ | `class ReflectionRecord(SQLModel, table=True)` 表示数据库表模型，会参与建表；`class ReflectionCreate(SQLModel)` 没有 `table=True`，只是普通数据结构，用于 API schema，不会建表。 | 阶段 2 | 已记录 |
+| `Literal["helpful", "not_helpful"]` 是什么？ | `Literal` 是 Python 类型标注工具，用来限制字段只能取固定字面量值。本项目里 `feedback: Literal["helpful", "not_helpful"]` 表示反馈只能是 `helpful` 或 `not_helpful`，传其他值会校验失败。它类似 TypeScript 的 `"helpful" | "not_helpful"`。 | 阶段 2 | 已记录 |
+| Python 的 `list[str]` 是数组吗？ | Python 的 `list` 基本对应 JavaScript 的 array。`emotion_tags: list[str]` 表示字符串列表，对应 JSON 里的 `["焦虑", "委屈"]`，类似 TypeScript 的 `string[]`。 | 阶段 2 | 已记录 |
+| FastAPI 的 `/docs` 是怎么生成的？ | `/docs` 是 FastAPI 自动生成的 Swagger UI 接口文档。它不是只根据 `schemas.py` 生成，而是综合路由定义、HTTP 方法、路径、查询参数、请求体 schema、响应体 schema、类型标注和 `Field(...)` 校验规则生成。开发时可以直接在 `/docs` 页面测试接口。 | 阶段 2 | 已记录 |
+| `reflections.py` 是做什么的？ | `reflections.py` 是阶段 2 的复盘记录路由文件，负责注册 `/api/reflections` 相关接口，并把 schema 校验、数据库 Session、ReflectionRecord 模型和 CRUD 操作串起来。它是阶段 2 API 读写 SQLite 的核心文件。 | 阶段 2 | 已记录 |
+| `APIRouter` 是什么？ | `APIRouter` 用来把一组相关接口模块化管理，避免所有接口都写在 `main.py`。它不是 Next/Nuxt 那种目录结构自动生成路由；FastAPI 需要在代码里显式创建 `APIRouter(prefix=...)`、用 `@router.get/post` 注册接口，并在 `main.py` 中 `app.include_router(...)` 挂载后才生效。 | 阶段 2 | 已记录 |
+| `main.py` 在后端里负责什么？ | `main.py` 是 FastAPI 后端应用总入口，负责创建 `app = FastAPI(...)`，配置应用生命周期 lifespan，启动时初始化数据库表，配置 CORS，注册 `/health` 健康检查接口，并通过 `app.include_router(reflections.router)` 挂载业务路由。 | 阶段 2 | 已记录 |
+| `@asynccontextmanager` 是什么？ | `@asynccontextmanager` 是 Python 的装饰器，可以把一个异步生成器函数转换成异步上下文管理器。FastAPI 的 lifespan 使用这种形式描述应用启动前做什么、应用关闭时做什么。 | 阶段 2 | 已记录 |
+| 为什么 `lifespan` 要写成 `async def`？ | FastAPI/ASGI 的应用生命周期支持异步初始化和清理，例如以后可能需要 `await` 连接远程服务或关闭客户端。当前 `create_db_and_tables()` 是同步逻辑，但使用 `async def lifespan(...)` 符合 FastAPI 推荐的 lifespan 写法。 | 阶段 2 | 已记录 |
+| `lifespan(app: FastAPI)` 里的 `app` 为什么当前没用也要传？ | 这是 FastAPI lifespan 的函数签名约定，框架会调用 `lifespan(app)` 并传入当前 FastAPI 应用对象。当前阶段只初始化数据库表，所以没用到 `app`；以后可以用 `app.state` 存应用级资源，例如模型客户端、缓存、配置对象等。 | 阶段 2 | 已记录 |
+| `AsyncGenerator[None, None]` 是什么？ | 因为 `lifespan` 是 `async def` 且内部使用 `yield`，所以它是异步生成器。`AsyncGenerator[None, None]` 表示这个异步生成器 yield 出去的值是 `None`，也不接收外部 send 进来的值。当前 lifespan 的 `yield` 只是用来分隔启动阶段和运行/关闭阶段。 | 阶段 2 | 已记录 |
+| `lifespan` 里的 `yield` 和 `get_session` 里的 `yield` 有什么区别？ | 两者都用来把函数分成“前置逻辑”和“后置清理”两段。`get_session` 里 `yield session` 是把数据库 Session 交给接口使用，用完后退出 `with` 自动关闭；`lifespan` 里 `yield` 是启动逻辑和关闭逻辑的分界线，`yield` 前执行应用启动初始化，`yield` 后可写应用关闭清理逻辑。 | 阶段 2 | 已记录 |
+| 编辑器提示 `import fastapi could not be resolved` 是什么？ | 这通常是 VS Code/Pylance 没选中后端虚拟环境解释器导致的类型提示问题，不一定是运行错误。应选择 `backend/.venv/bin/python` 作为 Python interpreter；只要后端能启动，说明运行环境里有 fastapi。 | 阶段 2 | 已记录 |
+| Python f-string 是什么？ | `f"{text[:max_length]}..."` 是 Python 格式化字符串，前缀 `f` 表示可以在字符串里用 `{}` 插入表达式结果。`text[:max_length]` 表示截取前 `max_length` 个字符，所以结果类似 `"abc..."`。 | 阶段 2 | 已记录 |
+| `record_id` 和 `session_id` 为什么要同时满足？ | `record_id` 标识某一条记录，`session_id` 标识这条记录属于哪个匿名用户/会话。查询详情、删除、反馈时必须同时满足 `id == record_id` 且 `session_id == 当前用户`，否则用户可能通过改 URL 里的 ID 访问或修改别人数据。 | 阶段 2 | 已记录 |
+| `session.exec(statement).first()` 是什么意思？ | `session.exec(statement)` 表示用当前数据库 Session 执行 SQLModel 查询语句；`.first()` 表示只取第一条结果，如果没有结果则返回 `None`。按主键 ID 查询理论上最多只有一条，所以适合用 `first()`。 | 阶段 2 | 已记录 |
+| `Depends(get_session)` 是什么意思？ | `Depends` 是 FastAPI 依赖注入。`session: Session = Depends(get_session)` 表示这个接口需要数据库 Session，FastAPI 会自动调用 `get_session()`，把 yield 出来的 session 传给接口函数。 | 阶段 2 | 已记录 |
+| `Query(..., min_length=1)` 是什么意思？ | `Query` 用来声明和校验 URL query 参数。`...` 在这里表示该参数必填；`min_length=1` 表示字符串最短长度为 1。因此 `session_id: str = Query(..., min_length=1)` 表示必须在 URL 中传 `?session_id=xxx`。 | 阶段 2 | 已记录 |
+| 什么时候需要 `session.refresh(record)`？ | `refresh` 用来从数据库重新加载对象的最新状态。创建后常用它获取数据库生成的 `id`、默认值或时间字段；修改后如果要返回最新对象，也可以 refresh；删除后记录已不存在，不需要 refresh；单纯查询也不需要 refresh。 | 阶段 2 | 已记录 |
+| `session.add(record)` 是新增还是追踪变化？ | 更准确地说，`session.add(record)` 是把对象加入当前 Session 的管理范围。新对象被 add 后，commit 会执行 INSERT；已存在对象如果已被 Session 查询出来，通常已经处于管理状态，修改字段后 commit 会执行 UPDATE，不一定需要再次 add。可以简化理解为：add 让 Session 管理对象，Session 管理的对象会在 commit 时把变化同步到数据库。 | 阶段 2 | 已记录 |
+| payload 和 query 有什么区别？ | query 是 URL 上的查询参数，例如 `GET /api/reflections?session_id=demo-session`，适合筛选条件、分页、搜索关键词、简单标识；payload 通常指请求体 body 里的 JSON 数据，适合创建/修改数据、复杂结构、较长内容。 | 阶段 2 | 已记录 |
+| path 参数、query 参数、payload 怎么区分？ | 出现在路径模板里的参数是 path 参数，例如 `@router.post("/{record_id}/feedback")` 里的 `{record_id}` 会自动对应函数参数 `record_id: int`；`?` 后面的参数是 query 参数，例如 `?session_id=demo-session`；请求体 JSON 是 payload/body，例如 `payload: FeedbackUpdate`。不一定要显式写 `Path(...)`，FastAPI 会根据路径模板自动识别 path 参数。 | 阶段 2 | 已记录 |
+| 什么时候用 query，什么时候用 payload？ | 一般查询类 GET 接口常用 query，例如列表接口按 `session_id` 筛选；创建或修改类 POST/PUT/PATCH 接口常用 payload，例如创建复盘记录或提交反馈。具体还要结合接口语义和数据复杂度。 | 阶段 2 | 已记录 |
+| 为什么 POST 创建接口写 `status_code=201`，GET 列表接口没写？ | FastAPI 成功响应默认是 `200 OK`。GET 查询成功用默认 200 很合适，所以可以不写；POST 创建资源更标准的状态码是 `201 Created`，所以创建记录接口显式写 `status_code=status.HTTP_201_CREATED`。DELETE 如果返回 `{"deleted": true}`，也可以使用默认 200。 | 阶段 2 | 已记录 |
+| `session.commit()` 是做什么的？ | `commit()` 是把当前 Session 中累计的数据库变化真正提交到数据库。新增对象、修改字段、删除对象在 commit 前还只是当前数据库事务里的变化；执行 commit 后才会持久化到 SQLite 文件。简单链路：`add/delete/修改字段` 表示 Session 里有变化，`commit` 表示把变化落库，`refresh` 表示从数据库重新读取最新对象。 | 阶段 2 | 已记录 |
+| `session.add/commit` 可以类比 Git 的 `add/commit` 吗？ | 可以作为初步类比：`git add` 把文件变化加入暂存区，`session.add` 把对象加入 Session 管理；`git commit` 把暂存变化提交到 Git 仓库，`session.commit` 把 Session 中的数据库变化提交到数据库。但两者不完全一样：Git 管代码版本历史，数据库 Session 管对象状态；数据库 commit 更准确是提交事务。 | 阶段 2 | 已记录 |
 
 ### 数据库
 
@@ -123,7 +164,7 @@
 | 阶段 | 目标 | 关键产出 | 状态 |
 | --- | --- | --- | --- |
 | 阶段 1 | 项目骨架 | 前端 Next.js、后端 FastAPI、健康检查、README | 进行中 |
-| 阶段 2 | SQLite 数据库 | reflection_records 表和 CRUD 接口 | 未开始 |
+| 阶段 2 | SQLite 数据库 | reflection_records 表和 CRUD 接口 | 进行中 |
 | 阶段 3 | 前端表单和历史记录 | 表单、session_id、列表、详情、删除 | 未开始 |
 | 阶段 4 | 接入大模型 API | 后端模型调用、Markdown 报告、保存记录 | 未开始 |
 | 阶段 5 | 流式输出 | 后端流式响应、前端逐步展示、异常状态 | 未开始 |
@@ -145,6 +186,14 @@
 - 当前理解：前端负责页面和交互，后端负责 API、数据、模型调用和密钥保护；两者本地开发时分别启动。
 - 验证结果：前端依赖安装成功，`npm run build` 通过；后端 `main.py` 语法检查通过。
 - 待验证：后端实际启动还未完成，因为系统缺少 `python3.12-venv/ensurepip`，创建虚拟环境会失败。
+
+### 阶段 2：SQLite 数据库
+
+- 日期：2026-07-01
+- 已完成：接入 SQLite 和 SQLModel，创建 `reflection_records` 表模型，拆分 `database.py`、`models.py`、`schemas.py`、`routers/reflections.py`。
+- 已实现：创建测试记录、查询列表、查询详情、提交反馈、删除记录，并通过 `session_id` 做数据隔离。
+- 验证结果：`/health` 正常；创建记录、列表、详情、错误 session 隔离、反馈、删除、删除后列表为空均已通过接口验证。
+- 当前理解：阶段 2 的重点是让后端从“只返回健康检查”升级为“能通过 API 读写 SQLite 数据”。
 
 ## 待解决问题
 

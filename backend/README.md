@@ -23,3 +23,19 @@ Expected response:
 ```json
 {"status":"ok"}
 ```
+
+API docs:
+
+```text
+http://localhost:8000/docs
+```
+
+Stage 2 database APIs:
+
+```text
+POST   /api/reflections
+GET    /api/reflections?session_id=demo-session
+GET    /api/reflections/{id}?session_id=demo-session
+DELETE /api/reflections/{id}?session_id=demo-session
+POST   /api/reflections/{id}/feedback
+```

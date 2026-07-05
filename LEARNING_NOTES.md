@@ -57,6 +57,66 @@
 | 为什么 `layout.tsx` 没有 import `page.tsx`？ | 这是 Next.js App Router 的文件约定。`app/page.tsx` 自动对应首页 `/`，`app/layout.tsx` 自动作为该目录下页面的布局。Next.js 会自动把页面组件作为 `children` 传给布局组件，类似自动组合 `<RootLayout><Home /></RootLayout>`，不需要手动 import。 | 阶段 1 | 已记录 |
 | `.tsx` 是什么？ | `.tsx` 表示 TypeScript + JSX。`.ts` 适合没有 JSX 的普通 TypeScript 逻辑文件；`.tsx` 适合写 React 组件，因为组件里会返回类似 HTML 的 JSX/TSX 结构，例如 `<main><h1>...</h1></main>`。 | 阶段 1 | 已记录 |
 | React 组件为什么是函数返回类似 HTML 的内容？ | React 组件通常是返回 UI 描述的函数。函数返回的不是普通 HTML 字符串，而是 JSX/TSX，React/Next.js 会把它编译并渲染成浏览器 DOM。当前阶段先理解：React 页面由组件函数组成，组件函数 `return` TSX，TSX 描述页面 UI。 | 阶段 1 | 已记录 |
+| 阶段 3 前端为什么拆成 `types`、`lib`、`components` 和 `page.tsx`？ | 这样拆是为了让职责清晰：`types/` 只定义前端数据结构；`lib/` 放工具和后端 API 请求；`components/` 只负责 UI 展示和局部交互；`page.tsx` 负责页面编排、状态管理和业务流程协调。好处是避免所有代码堆在 `page.tsx`，也方便后续阶段替换创建逻辑、接入 LLM 和继续扩展页面。 | 阶段 3 | 已记录 |
+| `localStorage` 和 `sessionStorage` 有什么区别？ | 两者都是浏览器本地存储。`localStorage` 通常会持久保存在本地磁盘上，刷新页面、关闭浏览器、关机重启后一般仍然存在，直到用户清理站点数据或代码主动删除；`sessionStorage` 通常只在当前标签页会话内有效，关闭标签页后就会清空。当前项目用 `localStorage` 保存匿名 `session_id`，是为了没有登录系统时也能在下次打开页面后继续看到历史记录。 | 阶段 3 | 已记录 |
+| `crypto.randomUUID()` 是什么？ | `crypto` 是浏览器内置的全局对象，属于 Web Crypto API，不是 npm 包，所以不需要 import；`crypto.randomUUID()` 用来生成随机 UUID 字符串，例如 `9f3b7f61-6a44-4f87-9df0-7e4c5f0e2a91`。当前项目用它生成匿名 `session_id`，比 `Math.random()` 更适合做唯一标识。 | 阶段 3 | 已记录 |
+| `import type` 是什么意思？ | `import type` 只导入 TypeScript 类型，不导入运行时代码。类型只在编译检查时存在，浏览器真正运行的 JavaScript 里没有这些类型。当前 `types/reflection.ts` 只定义类型，没有真实函数逻辑，所以用 `import type` 更准确。 | 阶段 3 | 已记录 |
+| `import` 什么时候要用 `{}`？ | 如果目标文件使用命名导出，例如 `export function xxx` 或 `export type Xxx`，导入时使用 `{ xxx }`；如果目标文件使用 `export default` 默认导出，导入时不用 `{}`，可以自己命名。 | 阶段 3 | 已记录 |
+| `process.env.NEXT_PUBLIC_API_BASE_URL` 在哪里配置？ | 它是 Next.js 环境变量，通常可以写在 `frontend/.env.local`。当前项目还没配置，所以代码会使用兜底地址 `http://localhost:8000`。Next.js 中只有 `NEXT_PUBLIC_` 开头的环境变量会暴露给浏览器端代码。 | 阶段 3 | 已记录 |
+| `??` 是三元表达式吗？ | 不是。`??` 是空值合并运算符，表示左侧是 `null` 或 `undefined` 时使用右侧兜底值；三元表达式是 `condition ? valueA : valueB`。 | 阶段 3 | 已记录 |
+| TypeScript 里的 `<T>` 是什么？ | `<T>` 可以理解成类型变量/泛型参数。函数定义时不把返回数据类型写死，而是在调用时指定，例如 `request<ReflectionDetail>(...)` 表示这次请求期望返回 `ReflectionDetail`。 | 阶段 3 | 已记录 |
+| 为什么 `request<T>` 会影响返回值类型？ | `request<T>` 里的 `<T>` 是声明这个通用函数有一个类型参数；后面的 `Promise<T>` 是使用这个类型参数作为返回值类型。如果去掉 `request<T>` 里的 `<T>`，`Promise<T>` 中的 `T` 就没有来源。调用 `request<ReflectionDetail>(...)` 时，就是告诉这个通用函数：本次请求的 `T` 是 `ReflectionDetail`。 | 阶段 3 | 已记录 |
+| `Promise<T>` 是什么？ | `Promise<T>` 表示一个异步结果。成功时 Promise 会 resolve 出 `T` 类型的数据；失败时 Promise 会 reject 一个错误，例如请求函数里 `throw new Error(...)` 会让 async 函数返回失败状态的 Promise。`T` 只描述成功时的数据类型，不代表请求一定成功。 | 阶段 3 | 已记录 |
+| 参数名后面的 `?` 是什么意思？ | 在 TypeScript 里，`init?: RequestInit` 表示 `init` 是可选参数，可以传也可以不传。 | 阶段 3 | 已记录 |
+| `RequestInit` 是什么？ | `RequestInit` 是浏览器内置的 TypeScript 类型，用来描述 `fetch` 第二个参数的配置结构，例如 `method`、`headers`、`body`、`credentials`、`signal` 等。 | 阶段 3 | 已记录 |
+| 模板字符串里的 `${...}` 是什么？ | 这是模板字符串插值语法，必须配合反引号使用。`${API_BASE_URL}${path}` 等价于 `API_BASE_URL + path`，用于拼接完整请求地址。 | 阶段 3 | 已记录 |
+| 为什么请求 JSON 要写 `Content-Type: application/json`？ | 如果请求体通过 `JSON.stringify(payload)` 发送 JSON 字符串，就应该设置 `Content-Type: application/json`，告诉后端按 JSON 解析请求体。GET 请求没有 body 时不一定需要，但当前为了封装简单统一加上。上传文件时通常不能手动写这个值，而应让浏览器设置 multipart 边界。 | 阶段 3 | 已记录 |
+| `init?.headers` 里的 `?.` 是什么？ | `?.` 是可选链。因为 `init` 可能没传或可能是空值，直接写 `init.headers` 会在 `init` 为 `undefined` 或 `null` 时报错；`init?.headers` 表示如果 `init` 是 `null` 或 `undefined` 就返回 `undefined`，否则读取 `init.headers`。 | 阶段 3 | 已记录 |
+| `response.json()` 是做什么的？ | 它会读取后端返回的 JSON 文本，并解析成 JavaScript 对象。例如后端返回 `{"status":"ok"}`，前端调用 `response.json()` 后得到 `{ status: "ok" }`。这个过程也是异步的，所以返回 Promise。 | 阶段 3 | 已记录 |
+| `as Promise<T>` 是什么意思？ | `as` 是 TypeScript 类型断言。浏览器原生 `response.json()` 的类型通常比较宽泛，TypeScript 不知道后端具体返回什么结构；`as Promise<T>` 表示告诉 TypeScript：这个 JSON 解析结果可以按当前请求期望的 `Promise<T>` 看待。 | 阶段 3 | 已记录 |
+| `new URLSearchParams(...)` 是什么？ | `URLSearchParams` 是浏览器内置对象，用来生成和处理 URL query 参数。`new URLSearchParams({ session_id: sessionId })` 会创建一个 query 参数对象，`params.toString()` 会把它转成 `session_id=xxx` 这种字符串，并自动处理中文、空格、特殊符号的 URL 编码。 | 阶段 3 | 已记录 |
+| `Promise<{ deleted: boolean }>` 里可以直接写对象类型吗？ | 可以。TypeScript 允许直接写内联对象类型。`Promise<{ deleted: boolean }>` 表示成功后会得到一个对象，对象里有 `deleted` 布尔字段。对象结构简单时可以内联写，复杂或复用时再单独定义 `type DeleteResponse = { deleted: boolean }`。 | 阶段 3 | 已记录 |
+| `method: "DELETE"` 是什么？ | `fetch` 默认请求方法是 GET。如果要调用删除接口，需要显式写 `method: "DELETE"`。在 REST API 中常见方法包括 GET 获取数据、POST 创建/提交、PUT 整体更新、PATCH 局部更新、DELETE 删除数据。 | 阶段 3 | 已记录 |
+| REST API 是什么意思？ | REST API 是一种常见后端接口设计风格。简单理解：把后端数据当成资源，用 URL 表示资源，用 HTTP 方法表示动作。例如 `GET /api/reflections` 表示获取复盘列表，`POST /api/reflections` 表示创建复盘，`GET /api/reflections/{id}` 表示获取详情，`DELETE /api/reflections/{id}` 表示删除记录。核心思想是 URL 尽量表达“操作的东西是什么”，HTTP method 表达“要做什么”。 | 阶段 3 | 已记录 |
+| Next.js 的 Server Component 和 Client Component 有什么区别？ | App Router 默认组件是 Server Component，主要在服务端执行，适合静态展示、服务端数据读取和不需要浏览器交互的页面结构。需要 `useState/useEffect`、点击/输入事件、`localStorage/window/document` 等浏览器能力时，要在文件顶部写 `"use client"`，让它成为 Client Component。不是所有前端页面都要写 `"use client"`。 | 阶段 3 | 已记录 |
+| React Hook 是什么？ | Hook 是 React 提供的一类函数，让函数组件拥有状态、副作用等能力，通常以 `use` 开头。例如 `useState` 管理组件状态，`useEffect` 处理页面加载后的副作用。普通函数可以计算或请求接口，但普通变量变化不会通知 React 重新渲染；用 state 并调用 setState，React 才知道数据变了并更新 UI。 | 阶段 3 | 已记录 |
+| `FormEvent<HTMLFormElement>` 是什么？ | 它是 React 表单提交事件的 TypeScript 类型，表示这个 event 来自 HTML 的 `<form>` 元素。事件类型要看绑定在哪个元素上：`form onSubmit` 常用 `FormEvent<HTMLFormElement>`，输入框变化可能是 `ChangeEvent<HTMLInputElement>`、文本域是 `HTMLTextAreaElement`、下拉框是 `HTMLSelectElement`。`FormEvent` 本身不是过时，只是更推荐用 `import type` 导入类型。 | 阶段 3 | 已记录 |
+| 为什么表单要有 `initialValues`？ | `initialValues` 是表单初始状态，不是替用户填写最终内容。受控表单的 `value` 来自 React state，所以页面刚打开时 state 需要一个初始值，例如事件描述为空、情绪强度默认 5、分析方向默认综合分析。提交成功后也可以用 `setValues(initialValues)` 快速重置表单。 | 阶段 3 | 已记录 |
+| Props 类型里可以写函数吗？ | 可以。React props 可以传普通值，也可以传函数。`onSubmit: (values: ReflectionFormValues) => Promise<void>` 表示父组件传给表单一个异步提交函数；表单组件只收集数据并调用它，不直接关心保存逻辑。`Promise<void>` 表示异步动作完成后不返回具体数据。 | 阶段 3 | 已记录 |
+| `export function ReflectionForm({ isSubmitting, onSubmit }: ReflectionFormProps)` 怎么理解？ | 这是定义并导出一个 React 函数组件。括号里是函数入参，也就是 props 对象；`{ isSubmitting, onSubmit }` 是对象解构，等价于从 `props.isSubmitting` 和 `props.onSubmit` 取值；`: ReflectionFormProps` 是给 props 参数标注类型。 | 阶段 3 | 已记录 |
+| React 函数组件是什么意思？ | React 组件通常写成函数，函数接收 props/state 等输入，返回一段 TSX 描述 UI。可以理解为 `UI = function(props, state)`。`.tsx` 文件不一定都必须导出函数，但包含页面/组件 UI 的 `.tsx` 文件通常会定义函数组件。以前 React 也常用 class component，现在主流写法是 function component + Hooks。 | 阶段 3 | 已记录 |
+| `const [values, setValues] = useState<ReflectionFormValues>(initialValues)` 怎么理解？ | `useState` 创建 React 状态，`<ReflectionFormValues>` 指定状态类型，`initialValues` 是初始值。`useState` 返回数组：第一项 `values` 是当前表单状态，第二项 `setValues` 是更新状态的函数。调用 `setValues(...)` 后，React 会重新渲染组件。 | 阶段 3 | 已记录 |
+| `setValues((current) => ...)` 里的 `current` 是什么？ | 这是 React state 的函数式更新写法。`current` 是 React 传入的当前最新状态，也就是最新的 `values`。当新状态依赖旧状态时，例如切换情绪标签需要基于旧的 `emotion_tags` 判断是否已选中，推荐使用函数式更新，因为 React 状态更新可能异步合并，外层闭包里的 `values` 不一定永远是最新值。 | 阶段 3 | 已记录 |
+| 什么是 React 受控表单？ | 受控表单是指表单控件的值由 React state 控制。`value={values.event_text}` 负责显示 state，`onChange` 读取用户输入并调用 `setValues` 更新 state。好处是提交时能直接拿完整 `values`，可以实时校验、控制按钮 disabled、提交后重置表单，也方便字段联动。 | 阶段 3 | 已记录 |
+| 为什么表单提交要 `event.preventDefault()`？ | 浏览器原生 form 提交默认会刷新页面并跳转。React 单页应用通常不希望刷新页面，而是自己用 JavaScript 调接口，所以在 `handleSubmit` 中调用 `event.preventDefault()` 阻止默认行为，再执行自定义保存逻辑。 | 阶段 3 | 已记录 |
+| `onChange={(event) => setValues({ ...values, event_text: event.target.value })}` 是什么？ | 这是受控输入框的更新逻辑：用户输入触发 `onChange`，`event.target.value` 读取当前输入值，`{ ...values, event_text: event.target.value }` 创建一个新对象，保留原表单其他字段，只替换 `event_text`。React 状态不推荐直接修改原对象，应通过 `setValues` 设置新对象来触发重新渲染。 | 阶段 3 | 已记录 |
+| TSX 属性什么时候要用 `{}`？ | 在 JSX/TSX 里，属性值如果是 JavaScript/TypeScript 表达式，就要用 `{}`，例如 `onSubmit={handleSubmit}`、`value={values.event_text}`、`disabled={isSubmitting}`、`onChange={(event) => setValues(...)}`。如果是固定字符串，可以直接用引号，例如 `placeholder="今天发生了什么？"`、`type="submit"`。判断规则：固定字符串用 `"..."`，变量/函数/表达式用 `{...}`。 | 阶段 3 | 已记录 |
+| `<input min="1" max="10">` 里的数字是字符串吗？ | 是。JSX/TSX 中 `min="1"`、`max="10"` 是字符串属性，HTML DOM 属性本来就是以字符串形式传递，浏览器会根据 `input type="range"` 理解成数字范围。也可以写成 `min={1}`、`max={10}`。但无论哪种写法，`event.target.value` 读取到的通常都是字符串，所以当前项目用 `Number(event.target.value)` 转成 `number`，匹配 `emotion_intensity: number`。 | 阶段 3 | 已记录 |
+| 为什么 `event.target.value as FocusArea` 要用 `as`？ | `event.target.value` 在 TypeScript 里默认是普通 `string`，但 `focus_area` 的类型是 `FocusArea`，只能是固定几个字符串之一。由于选项来自 `focusOptions: FocusArea[]`，开发者知道这个值是合法的 FocusArea，于是用 `as FocusArea` 做类型断言。`as` 不改变运行时的值，只是告诉 TypeScript 按某个类型看待它；只有在确定来源可靠时才应该使用。 | 阶段 3 | 已记录 |
+| form 里的普通按钮为什么要写 `type="button"`？ | 在 HTML 表单里，`button` 默认可能按提交按钮处理。如果情绪标签按钮不写 `type="button"`，点击标签时可能误触发表单提交。只有真正提交表单的按钮才写 `type="submit"`；普通交互按钮应显式写 `type="button"`。 | 阶段 3 | 已记录 |
+| `ReflectionForm.tsx` 里面用的是组件库吗？ | 当前没有使用 Ant Design、MUI、shadcn/ui 等组件库。表单、输入框、下拉框、按钮都是原生 HTML 元素，样式用 Tailwind CSS 手写。阶段 3 这样做是为了优先理解 React 表单和状态基础。 | 阶段 3 | 已记录 |
+| TSX 内容里的 `{new Date(...).toLocaleString()}` 怎么理解？ | TSX 内容中的 `{}` 不是模板字符串，而是表示执行 JavaScript 表达式并把结果渲染到页面。后端的 `datetime` 通过 JSON 返回时会变成字符串，因为 JSON 没有 datetime 类型，只有 string、number、boolean、null、object、array 等基础类型。前端用 `new Date(record.created_at)` 把时间字符串转成 JavaScript `Date` 对象，再用 `.toLocaleString()` 按当前浏览器语言、地区和时区格式化成人能读的本地时间。 | 阶段 3 | 已记录 |
+| Vue `{{}}`、TSX `{}` 和模板字符串有什么区别？ | Vue 模板里的 `{{ message }}` 主要用于文本插值；TSX/JSX 里的 `{message}` 表示在页面结构中执行 JavaScript 表达式，既可用于文本，也可用于属性、条件、循环和事件回调；模板字符串是 JavaScript 字符串语法，外层用反引号，例如 `` `/api/reflections/${id}` ``，用于在字符串内部插入变量或表达式。简单记：Vue `{{}}` 是模板文本插值，TSX `{}` 是页面结构里的 JS 表达式，`` `${}` `` 是字符串里的插值。 | 阶段 3 | 已记录 |
+| 为什么历史记录时间显示不对？ | 后端用 `datetime.now(timezone.utc)` 生成 UTC 时间，但 SQLite 没有真正的“带时区 datetime 类型”，写入/读出时可能只剩普通时间字符串，例如 `2026-07-05T07:54:09`，没有 `Z` 或 `+00:00`。前端 `new Date("2026-07-05T07:54:09")` 会倾向于按本地时间解析，导致 UTC 时间没有正确转换成北京时间。解决方式：前端显示时先判断字符串是否带时区；如果没有时区标记，就补 `Z` 按 UTC 解析，再用 `toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false })` 固定显示中国本地时间。 | 阶段 3 | 已记录 |
+| `hour12: false` 是什么意思？ | `toLocaleString` 的 `hour12: false` 表示使用 24 小时制显示时间，而不是上午/下午的 12 小时制。例如更倾向显示 `15:54:09`，而不是 `下午3:54:09`。 | 阶段 3 | 已记录 |
+| `/(?:Z|[+-]\d{2}:\d{2})$/.test(createdAt)` 是什么意思？ | 这是用正则判断时间字符串末尾是否带时区标记。`/.../` 是正则字面量；`.test(createdAt)` 返回是否匹配；`(?:...)` 是非捕获分组；`|` 表示或者；`Z` 匹配 UTC 标记；`[+-]\d{2}:\d{2}` 匹配 `+08:00`、`+00:00`、`-05:00` 这种时区偏移；`$` 表示必须在字符串结尾。匹配成功说明时间字符串已经有时区标记，不需要补 `Z`。 | 阶段 3 | 已记录 |
+| `useState("")` 为什么可以用空字符串？ | `useState` 需要一个初始值。页面首次渲染时还没有真正的 `session_id`，所以先用空字符串表示“尚未初始化”，后续在 `useEffect` 中调用 `setSessionId(nextSessionId)` 更新为真实值。 | 阶段 3 | 已记录 |
+| `useState("")` 为什么不用显式类型声明？ | TypeScript 可以根据初始值推断类型。`useState("")` 的初始值是字符串，所以推断 `sessionId` 是 `string`。但如果初始值不能准确表达类型，就需要显式写，例如空数组 `useState<ReflectionListItem[]>([])`，因为 `[]` 本身推不出数组元素类型。 | 阶段 3 | 已记录 |
+| `const [sessionId, setSessionId] = useState("")` 怎么理解？ | `useState` 返回一个固定结构的数组：第一项是当前状态值，第二项是更新状态的函数。变量名可以自定义，但 React 社区约定写成 `[xxx, setXxx]`，例如 `sessionId` 和 `setSessionId`。 | 阶段 3 | 已记录 |
+| `useEffect` 是什么？ | `useEffect` 是 React Hook，用来处理组件渲染后需要执行的副作用，例如请求接口、读取 `localStorage`、设置定时器、订阅事件、修改 `document.title`。当前项目用它在页面首次渲染后获取/创建 session，并加载历史记录。 | 阶段 3 | 已记录 |
+| React 组件渲染是什么意思？ | React 里的渲染通常指组件的 state 或 props 变化后，React 重新执行组件函数，计算新的 UI。不是浏览器页面上任何变化都会导致 React 渲染；例如滚动、鼠标移动本身不一定触发组件重新渲染，除非这些变化被写入 React state。 | 阶段 3 | 已记录 |
+| `useEffect` 的回调可以直接写成 async 吗？ | 不推荐。`async` 函数一定返回 Promise，但 `useEffect` 期望回调返回 `undefined` 或一个 cleanup 清理函数。如果直接返回 Promise，React 不会把它当作正确的清理函数。常见写法是在 effect 内部调用异步函数，例如 `void loadRecords()` 或定义内部 `async function run()` 后再执行。 | 阶段 3 | 已记录 |
+| `void loadRecords(nextSessionId)` 为什么写 `void`？ | `loadRecords` 是 async 函数，会返回 Promise。`useEffect` 的回调不能直接返回 Promise，而当前代码只是启动这个异步任务，不在 effect 回调里 await 它，所以写 `void` 表示主动忽略这个 Promise 返回值，避免 linter 提示未处理 Promise。 | 阶段 3 | 已记录 |
+| `useEffect(..., [])` 里的空数组是什么意思？ | 第二个参数是依赖数组。空数组 `[]` 表示这个 effect 只在组件首次挂载后执行一次；不传依赖数组则每次渲染后都执行；写 `[sessionId]` 则表示首次执行，并在 `sessionId` 变化后重新执行。 | 阶段 3 | 已记录 |
+| 函数参数 `nextSessionId = sessionId` 是什么意思？ | 这是函数参数默认值。如果调用 `loadRecords("abc")`，`nextSessionId` 是 `"abc"`；如果调用 `loadRecords()` 没传参数，就默认使用当前 state 里的 `sessionId`。TypeScript 可以根据默认值 `sessionId` 推断 `nextSessionId` 是 string，也可以显式写 `nextSessionId: string = sessionId`。 | 阶段 3 | 已记录 |
+| `loadRecords` 为什么定义在 `Home` 组件内部且不 export？ | 它只服务当前页面，不需要给其他文件调用；而且它依赖 `Home` 内部的 state 和 setState，例如 `sessionId`、`setIsLoading`、`setError`、`setRecords`。如果放到组件外部，就拿不到这些状态，反而需要传很多参数。 | 阶段 3 | 已记录 |
+| `nextSessionId` 和 `sessionId` 有什么区别？ | `sessionId` 是 React state，调用 `setSessionId(nextSessionId)` 后不会立刻改变当前函数作用域里的 `sessionId`，而是在下一次渲染中拿到新值。`nextSessionId` 是当前刚从 `getOrCreateSessionId()` 拿到的真实值，立即可用，所以页面首次加载历史记录时要传 `nextSessionId`。 | 阶段 3 | 已记录 |
+| `setSessionId` 为什么是下一次渲染才拿到新值？ | 调用 `setSessionId(nextSessionId)` 会让 React 记录状态更新并调度组件重新渲染。它不会立刻修改当前函数作用域里的 `sessionId` 变量，所以紧跟着读取 `sessionId` 可能仍是旧值；但下一次组件函数重新执行时，`sessionId` 就会变成新值。不是等“碰巧渲染”，而是 setState 本身会安排重新渲染。 | 阶段 3 | 已记录 |
+| 为什么 React 不在 `setState` 后立刻修改当前变量？ | React 会把 state 更新调度到后续渲染流程，而不是像普通变量赋值一样立刻改当前闭包里的值。这样可以保持当前函数执行的稳定性，并把同一轮同步代码中的多次状态更新批处理成较少的重新渲染。可以简单记：`setState` 不是立即改当前变量，而是通知 React 稍后用新值重新渲染组件。 | 阶段 3 | 已记录 |
+| 为什么 `listReflections(nextSessionId)` 不直接用 `sessionId`？ | 页面首次加载时，`setSessionId(nextSessionId)` 后当前闭包里的 `sessionId` 可能仍是初始空字符串。如果马上用 `sessionId` 请求，可能传空值；使用 `nextSessionId` 可以确保第一次加载列表时使用刚获取到的真实 session。 | 阶段 3 | 已记录 |
+| `nextSessionId` 为什么只能在 `useEffect` 里用？ | `nextSessionId` 是 `useEffect` 回调函数内部定义的局部变量，只在这个函数作用域里有效，`handleCreateReflection` 等外部函数访问不到它。所以需要调用 `setSessionId(nextSessionId)` 把它保存进 React state。职责上，`nextSessionId` 是当前 effect 同步流程里立即可用的局部变量；`sessionId` 是跨渲染、跨事件函数使用的组件状态。 | 阶段 3 | 已记录 |
+| `page.tsx` 在阶段 3 里负责什么？ | `page.tsx` 是阶段 3 的页面容器组件/编排层，负责初始化 `session_id`、加载历史列表、处理创建记录、选择详情、删除记录、管理 loading/error/selectedRecord 状态，并把状态和回调函数通过 props 传给 `ReflectionForm`、`HistoryList`、`ReflectionDetail`。子组件主要负责展示和局部交互，不直接请求接口。 | 阶段 3 | 已记录 |
+| `try` 里 `return` 了还会执行 `finally` 吗？ | 会。`finally` 的语义是不管 `try` 成功、`catch` 捕获、`return` 还是 `throw`，最后都要执行，常用于关闭 loading 状态或清理资源。但一般不要在 `finally` 里再写 `return` 或 `throw`，否则可能覆盖前面的结果。 | 阶段 3 | 已记录 |
 
 ### 后端
 
@@ -165,7 +225,7 @@
 | --- | --- | --- | --- |
 | 阶段 1 | 项目骨架 | 前端 Next.js、后端 FastAPI、健康检查、README | 进行中 |
 | 阶段 2 | SQLite 数据库 | reflection_records 表和 CRUD 接口 | 进行中 |
-| 阶段 3 | 前端表单和历史记录 | 表单、session_id、列表、详情、删除 | 未开始 |
+| 阶段 3 | 前端表单和历史记录 | 表单、session_id、列表、详情、删除 | 进行中 |
 | 阶段 4 | 接入大模型 API | 后端模型调用、Markdown 报告、保存记录 | 未开始 |
 | 阶段 5 | 流式输出 | 后端流式响应、前端逐步展示、异常状态 | 未开始 |
 | 阶段 6 | 体验完善 | Markdown 渲染、校验、错误处理、隐私提示 | 未开始 |
@@ -194,6 +254,17 @@
 - 已实现：创建测试记录、查询列表、查询详情、提交反馈、删除记录，并通过 `session_id` 做数据隔离。
 - 验证结果：`/health` 正常；创建记录、列表、详情、错误 session 隔离、反馈、删除、删除后列表为空均已通过接口验证。
 - 当前理解：阶段 2 的重点是让后端从“只返回健康检查”升级为“能通过 API 读写 SQLite 数据”。
+- 卡点记录：接口验证时曾出现后端返回 500。原因是后端服务仍运行着旧代码/旧 schema 状态，虽然 FastAPI 开发模式有 `--reload`，但并不是所有运行态问题都能靠热更新自动恢复。处理方式是停止后端服务后重新启动，再刷新 `/docs` 重新测试接口。
+
+### 阶段 3：前端表单和历史记录
+
+- 日期：2026-07-03
+- 已完成：新增前端表单、历史记录列表、历史详情、API 封装、匿名 `session_id` 管理和前端类型定义。
+- 已实现：表单提交创建记录、列表加载、详情查询、删除记录，并通过 `localStorage` 保存匿名 `session_id`。
+- 验证结果：`npm run build` 通过；后端 CRUD 请求结构验证通过。
+- 当前理解：阶段 3 的重点是让前端状态、表单输入和后端 CRUD 接口连起来。
+- 卡点记录：打开前端页面时出现 Next.js Runtime Error：`Cannot find module './833.js'`。排查发现当前终端 Node 版本是 `v16.20.2`，而项目要求 Node 20，且 `.next` 编译缓存可能不一致。处理方式：停止前端 dev server，执行 `nvm use 20` 确认 `node -v` 为 20，再删除 `frontend/.next` 并重新执行 `npm run dev`。经验：热更新适合普通源码改动，但依赖变化、Node 版本变化、`.next` chunk 缺失、manifest 不一致等问题应重启服务并清理生成缓存。
+- 卡点记录：前端提交复盘记录时后端返回 500，后端日志为 `sqlite3.OperationalError: attempt to write a readonly database`。原因是 SQLite 配置 `sqlite:///./reflection_records.db` 使用相对路径，实际数据库位置取决于启动 `uvicorn` 时所在目录；旧后端进程可能连接了旧启动目录下的只读/异常数据库。处理方式：停止后端服务，固定从 `backend/` 目录重新启动，确认 `reflection_records.db` 生成在 `backend/` 下后重新测试成功。经验：重启经常能解决运行态、旧连接、启动目录、热更新残留问题，但要同时理解根因，避免把所有问题都当成“玄学重启”。
 
 ## 待解决问题
 

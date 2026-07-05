@@ -1,34 +1,130 @@
-const stageItems = [
-  "Next.js 前端骨架",
-  "FastAPI 后端骨架",
-  "后端 /health 健康检查",
-  "README 本地启动说明"
-];
+"use client";
+
+import { useEffect, useState } from "react";
+
+import { HistoryList } from "./components/HistoryList";
+import { ReflectionDetail } from "./components/ReflectionDetail";
+import { ReflectionForm } from "./components/ReflectionForm";
+import { createReflection, deleteReflection, getReflection, listReflections } from "./lib/api";
+import { getOrCreateSessionId } from "./lib/session";
+import type { ReflectionDetail as ReflectionDetailType, ReflectionFormValues, ReflectionListItem } from "./types/reflection";
+
+const STAGE_3_TEST_REPORT = "阶段 3 前端联调测试报告：当前记录已成功从前端保存到后端 SQLite。";
 
 export default function Home() {
-  return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dff3ea,transparent_34%),linear-gradient(135deg,#fffaf3,#edf7f2)] px-6 py-10 text-ink">
-      <section className="mx-auto flex max-w-5xl flex-col gap-10">
-        <div className="rounded-[2rem] border border-white/70 bg-white/75 p-8 shadow-[0_24px_80px_rgba(23,32,51,0.12)] backdrop-blur">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-clay">
-            Stage 1 / Project Skeleton
-          </p>
-          <h1 className="text-4xl font-bold tracking-tight md:text-6xl">AI 情绪复盘助手</h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-700">
-            当前阶段先完成一个最小可运行的前后端分离骨架。后续会逐步接入
-            SQLite、LLM API、流式输出和历史记录。
-          </p>
-        </div>
+  const [sessionId, setSessionId] = useState("");
+  const [records, setRecords] = useState<ReflectionListItem[]>([]);
+  const [selectedRecord, setSelectedRecord] = useState<ReflectionDetailType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState("");
 
-        <div className="grid gap-4 md:grid-cols-4">
-          {stageItems.map((item, index) => (
-            <div key={item} className="rounded-3xl border border-white/70 bg-white/70 p-5 shadow-sm">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sage text-sm font-bold text-white">
-                {index + 1}
-              </span>
-              <p className="mt-4 font-semibold">{item}</p>
+  useEffect(() => {
+    const nextSessionId = getOrCreateSessionId();
+    setSessionId(nextSessionId);
+    void loadRecords(nextSessionId);
+  }, []);
+
+  async function loadRecords(nextSessionId = sessionId) {
+    if (!nextSessionId) {
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+    try {
+      const nextRecords = await listReflections(nextSessionId);
+      setRecords(nextRecords);
+    } catch {
+      setError("历史记录加载失败，请确认后端服务已启动。");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleCreateReflection(values: ReflectionFormValues) {
+    if (!sessionId) {
+      setError("session_id 尚未初始化，请刷新页面重试。");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError("");
+    try {
+      const createdRecord = await createReflection({
+        ...values,
+        session_id: sessionId,
+        ai_report: STAGE_3_TEST_REPORT
+      });
+      await loadRecords(sessionId);
+      setSelectedRecord(createdRecord);
+    } catch {
+      setError("保存失败，请确认后端服务已启动。");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleSelectRecord(recordId: number) {
+    if (!sessionId) {
+      return;
+    }
+
+    setError("");
+    try {
+      const detail = await getReflection(recordId, sessionId);
+      setSelectedRecord(detail);
+    } catch {
+      setError("详情加载失败，请稍后重试。");
+    }
+  }
+
+  async function handleDeleteRecord(recordId: number) {
+    if (!sessionId) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError("");
+    try {
+      await deleteReflection(recordId, sessionId);
+      setSelectedRecord(null);
+      await loadRecords(sessionId);
+    } catch {
+      setError("删除失败，请稍后重试。");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dff3ea,transparent_34%),linear-gradient(135deg,#fffaf3,#edf7f2)] px-5 py-8 text-ink md:px-8">
+      <section className="mx-auto flex max-w-7xl flex-col gap-8">
+        <header className="rounded-[2rem] border border-white/70 bg-white/75 p-7 shadow-[0_24px_80px_rgba(23,32,51,0.12)] backdrop-blur md:p-9">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-clay">Stage 3 / Frontend Integration</p>
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight md:text-6xl">AI 情绪复盘助手</h1>
+              <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-700">
+                当前阶段实现前端表单、匿名 session、历史记录列表和详情展示，并与 FastAPI + SQLite 后端完成联调。
+              </p>
             </div>
-          ))}
+            <div className="rounded-3xl bg-calm p-4 text-sm leading-6 text-slate-600">
+              <p className="font-semibold text-ink">当前 session</p>
+              <p className="mt-2 break-all font-mono text-xs">{sessionId || "初始化中..."}</p>
+            </div>
+          </div>
+        </header>
+
+        {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+
+        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <ReflectionForm isSubmitting={isSubmitting} onSubmit={handleCreateReflection} />
+          <div className="flex flex-col gap-6">
+            <HistoryList records={records} selectedId={selectedRecord?.id} isLoading={isLoading} onSelect={handleSelectRecord} />
+            <ReflectionDetail record={selectedRecord} isDeleting={isDeleting} onDelete={handleDeleteRecord} />
+          </div>
         </div>
 
         <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm leading-7 text-amber-900">

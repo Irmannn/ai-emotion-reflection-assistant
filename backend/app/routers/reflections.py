@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, select
 
 from app.database import get_session
+from app.llm_client import generate_reflection_report
 from app.models import ReflectionRecord
 from app.schemas import (
     DeleteResponse,
@@ -35,7 +36,8 @@ def get_record_for_session(record_id: int, session_id: str, session: Session) ->
 
 
 @router.post("", response_model=ReflectionDetail, status_code=status.HTTP_201_CREATED)
-def create_reflection(payload: ReflectionCreate, session: Session = Depends(get_session)) -> ReflectionRecord:
+async def create_reflection(payload: ReflectionCreate, session: Session = Depends(get_session)) -> ReflectionRecord:
+    ai_report = await generate_reflection_report(payload)
     record = ReflectionRecord(
         session_id=payload.session_id,
         event_text=payload.event_text,
@@ -44,7 +46,7 @@ def create_reflection(payload: ReflectionCreate, session: Session = Depends(get_
         automatic_thoughts=payload.automatic_thoughts,
         body_reaction=payload.body_reaction,
         focus_area=payload.focus_area,
-        ai_report=payload.ai_report,
+        ai_report=ai_report,
     )
     session.add(record)
     session.commit()

@@ -13,7 +13,6 @@ class ReflectionCreate(SQLModel):
     automatic_thoughts: str = ""
     body_reaction: str = ""
     focus_area: str = Field(min_length=1)
-    ai_report: str = ""
 
 
 class ReflectionListItem(SQLModel):

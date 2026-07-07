@@ -43,7 +43,7 @@ export function ReflectionForm({ isSubmitting, onSubmit }: ReflectionFormProps) 
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-clay">Reflection Form</p>
         <h2 className="mt-2 text-2xl font-bold">开始一次情绪复盘</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">阶段 3 暂时保存测试报告，阶段 4 会改为 AI 生成。</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">提交后由后端调用大模型生成复盘报告并保存。</p>
       </div>
 
       <label className="mt-6 block">
@@ -130,7 +130,7 @@ export function ReflectionForm({ isSubmitting, onSubmit }: ReflectionFormProps) 
         disabled={isSubmitting || values.emotion_tags.length === 0}
         className="mt-6 w-full rounded-2xl bg-ink px-5 py-3 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
-        {isSubmitting ? "保存中..." : "保存复盘记录"}
+        {isSubmitting ? "生成中..." : "生成并保存复盘报告"}
       </button>
     </form>
   );

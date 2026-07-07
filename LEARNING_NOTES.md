@@ -100,6 +100,36 @@
 | 为什么历史记录时间显示不对？ | 后端用 `datetime.now(timezone.utc)` 生成 UTC 时间，但 SQLite 没有真正的“带时区 datetime 类型”，写入/读出时可能只剩普通时间字符串，例如 `2026-07-05T07:54:09`，没有 `Z` 或 `+00:00`。前端 `new Date("2026-07-05T07:54:09")` 会倾向于按本地时间解析，导致 UTC 时间没有正确转换成北京时间。解决方式：前端显示时先判断字符串是否带时区；如果没有时区标记，就补 `Z` 按 UTC 解析，再用 `toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false })` 固定显示中国本地时间。 | 阶段 3 | 已记录 |
 | `hour12: false` 是什么意思？ | `toLocaleString` 的 `hour12: false` 表示使用 24 小时制显示时间，而不是上午/下午的 12 小时制。例如更倾向显示 `15:54:09`，而不是 `下午3:54:09`。 | 阶段 3 | 已记录 |
 | `/(?:Z|[+-]\d{2}:\d{2})$/.test(createdAt)` 是什么意思？ | 这是用正则判断时间字符串末尾是否带时区标记。`/.../` 是正则字面量；`.test(createdAt)` 返回是否匹配；`(?:...)` 是非捕获分组；`|` 表示或者；`Z` 匹配 UTC 标记；`[+-]\d{2}:\d{2}` 匹配 `+08:00`、`+00:00`、`-05:00` 这种时区偏移；`$` 表示必须在字符串结尾。匹配成功说明时间字符串已经有时区标记，不需要补 `Z`。 | 阶段 3 | 已记录 |
+| `cp .env.example .env` 是什么意思？ | `cp` 是复制文件命令，格式是 `cp 源文件 目标文件`。阶段 4 开始后端需要读取大模型 API Key 等环境变量，所以先把安全模板 `.env.example` 复制成本地真实配置文件 `.env`，再在 `.env` 中填写真实 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL` 等配置。`.env.example` 可以提交 GitHub，`.env` 包含私密信息，已被 `.gitignore` 忽略，不能提交。 | 阶段 4 | 已记录 |
+| 为什么 API Key 只能放后端，不能放前端？ | 浏览器 DevTools 看不到后端代码，因为后端代码运行在服务器/本机后端进程里，不会发给浏览器；但用户能看到前端打包后的 JS/CSS、Sources、Network 请求、本地存储和 DOM。只要 API Key 写进前端代码或前端可访问环境变量，就可能在 Sources 或打包产物里被搜索到；如果前端直接请求大模型 API，Authorization 请求头也会在 Network 里暴露。正确架构是：前端请求自己的 FastAPI 后端，后端读取 `.env` 里的 API Key，再由后端请求大模型服务。 | 阶段 4 | 已记录 |
+| 为什么用 `Settings` 类读取环境变量，而不是普通方法？ | 普通方法当然也能一次性读取多个环境变量；使用 `Settings(BaseSettings)` 的核心价值是把配置对象化、可缓存，并获得类型转换/校验和编辑器提示。`Settings()` 会生成配置对象，调用处可以用 `settings.llm_api_key` 这类属性；`get_settings()` 配合 `@lru_cache` 可以复用同一个配置对象；Pydantic 会按字段类型转换 `.env` 里的字符串，例如把 `"60"` 转成 `int`，后续也方便增加 URL、枚举、范围等校验。主要优点是类型支持和校验，其次是对象化和缓存。 | 阶段 4 | 已记录 |
+| `class Settings(BaseSettings)` 里的括号是什么意思？ | 在 Python 类定义里，`class Child(Parent):` 的括号表示继承父类，不是给类传参。`class Settings(BaseSettings):` 表示 `Settings` 继承 `BaseSettings`，类似 JavaScript 的 `class Settings extends BaseSettings`。对象创建时的括号才是传参，例如 `Settings()` 或 `Settings(llm_model="deepseek-chat")`。普通类通常通过 `__init__(self, ...)` 接收创建对象时的参数；当前 `Settings` 没有手写 `__init__`，因为 `BaseSettings` 父类已经提供初始化逻辑，会根据字段定义、环境变量和传入参数生成配置对象。 | 阶段 4 | 已记录 |
+| 为什么 `model_config` 不像 `llm_api_key` 一样写类型？ | `llm_api_key: str = Field(...)` 是普通配置字段，会从环境变量读取并成为 `settings.llm_api_key`。`model_config = SettingsConfigDict(extra="ignore")` 不是业务配置字段，而是 Pydantic v2 识别的特殊类配置属性，用来告诉 Pydantic 这个模型类本身如何工作，例如遇到额外环境变量时忽略。它不从 `.env` 读取，也不会作为普通字段使用，所以通常不写类型声明。 | 阶段 4 | 已记录 |
+| Python 的 `@` 装饰器语法是什么？ | `@xxx` 放在函数上方，表示用 `xxx` 给下面这个函数附加额外能力，本质上类似 `func = xxx(func)`。不同装饰器功能不同：`@lru_cache` 给函数增加缓存能力，第一次执行后复用结果；`@router.post(...)` / `@router.get(...)` 把函数注册成 FastAPI HTTP 接口处理函数；`@asynccontextmanager` 把异步生成器函数包装成异步上下文管理器。可以统一理解为：装饰器不改函数内部代码，但改变或扩展函数的使用方式。 | 阶段 4 | 已记录 |
+| Python 三个双引号 `"""..."""` 有哪些用法？ | 三个双引号本质是多行字符串语法。如果它放在模块、类、函数开头且不赋值，通常作为 docstring 文档字符串，用来说明代码用途，并可被 `help()` 等工具读取；如果赋值给变量，例如 `REPORT_STRUCTURE = """..."""`，它就是普通多行字符串值，会作为真实业务内容使用。f-string 不一定要三引号，`f"你好，{name}"` 是单行 f-string；`f"""...{value}..."""` 是多行 f-string。当前 `SYSTEM_PROMPT = f"""..."""` 是因为既需要插入变量，又是多行提示词。 | 阶段 4 | 已记录 |
+| `SYSTEM_PROMPT` 和 user prompt 怎么分工？ | `SYSTEM_PROMPT` 放长期规则，负责定义模型角色、安全边界、禁止事项、语气和输出格式，例如不做诊断、不替代咨询、必须输出固定 Markdown 结构。user prompt 放本次具体任务和用户输入，例如事件描述、情绪标签、强度、自动想法、身体反应和分析方向。简单记：system 管“你是谁、边界是什么、格式怎么输出”，user 管“这次要处理什么内容”。 | 阶段 4 | 已记录 |
+| `rstrip("/")` 是什么作用？ | Python 字符串的 `rstrip("/")` 会去掉字符串右侧连续出现的 `/`。当前 `_chat_completions_url(base_url)` 里用它处理 `LLM_BASE_URL`，避免用户把 base url 写成 `https://api.openai.com/v1/` 时拼出 `https://api.openai.com/v1//chat/completions` 这种双斜杠地址。 | 阶段 4 | 已记录 |
+| Python 函数名前面加 `_` 是什么意思？ | 例如 `_chat_completions_url`。单下划线开头是 Python 社区约定，表示这是模块内部辅助函数，不建议外部模块直接调用。Python 不会强制禁止访问，它不像真正的 private，只是给开发者和编辑器一个“内部实现细节”的信号。 | 阶段 4 | 已记录 |
+| 大模型参数 `temperature` 是什么？ | `temperature` 用来控制模型输出的随机性/发散程度。值越低，输出越稳定、保守、可重复；值越高，输出越发散、有创造性，但也更容易不稳定。当前设置 `0.4` 是为了让情绪复盘报告语气更克制、结构更稳定。心理自助类内容不适合太高随机性。 | 阶段 4 | 已记录 |
+| Python 的 `async with` 是什么？ | `async with` 是异步上下文管理器语法，用来管理需要异步打开/关闭的资源。当前 `async with httpx.AsyncClient(...) as client:` 表示创建一个异步 HTTP 客户端，代码块内用它发请求，离开代码块时自动异步关闭连接资源。它类似普通 `with`，但支持 `await` 场景。 | 阶段 4 | 已记录 |
+| `with Session`、`async with httpx.AsyncClient`、`with open` 分别管理什么？ | 它们都是上下文管理器，作用是保证资源用完后释放，但管理的资源不同。`with Session(engine) as session` 管数据库 ORM Session/数据库会话资源；`async with httpx.AsyncClient() as client` 管 HTTP 客户端资源，例如 HTTP 连接、连接池、网络 socket、HTTPS 相关资源；`with open(...) as file` 管文件句柄。`with` 用于同步资源管理，`async with` 用于异步资源管理，适合需要 `await` 的异步 IO 场景。 | 阶段 4 | 已记录 |
+| 为什么模型调用失败时返回 `502 Bad Gateway`？ | `502 Bad Gateway` 常用于表示当前后端服务本身收到了请求，但它依赖的上游服务失败了。当前项目里，FastAPI 后端是网关/中间层，大模型 API 是上游服务；如果模型 API 返回 401/429/500、网络失败、超时或响应格式异常，后端把它转换成 502，表示“上游模型服务调用失败”。 | 阶段 4 | 已记录 |
+| Python 的 `except` 类似 JavaScript 的 `catch` 吗？ | 可以这样理解。Python 用 `try/except` 捕获异常，类似 JavaScript 的 `try/catch`。例如 `except httpx.HTTPStatusError as exc:` 表示捕获 `HTTPStatusError`，并把异常对象命名为 `exc`，方便读取 `exc.response.status_code` 等信息。 | 阶段 4 | 已记录 |
+| `Authorization: Bearer xxx` 是什么意思？ | `Bearer` 字面意思是持有者/携带者。在 HTTP 鉴权里，`Authorization: Bearer <token>` 表示当前请求携带一个 bearer token，服务端用这个 token 判断调用方是否有权限。大模型 API Key 常通过 `Authorization: Bearer {LLM_API_KEY}` 传给模型服务。 | 阶段 4 | 已记录 |
+| `httpx` 里的 `json=request_body` 是什么？ | `json=` 表示把这个 Python 对象作为 HTTP 请求体发送。`httpx` 会自动把 Python dict/list 序列化成 JSON 字符串，并通常自动设置 JSON 请求头。当前代码仍显式写了 `Content-Type: application/json`，是为了让请求语义更清楚。 | 阶段 4 | 已记录 |
+| `response.raise_for_status()` 是什么？ | 它会检查响应 HTTP 状态码。状态码是 2xx 时不做事；如果是 400、401、429、500 等错误状态码，会抛出 `httpx.HTTPStatusError`，让代码进入异常处理分支。 | 阶段 4 | 已记录 |
+| `response.json()` 是把响应转成 Python 数据吗？ | 是。它把响应里的 JSON 文本解析成 Python 数据结构，例如 JSON object 变成 dict，JSON array 变成 list。模型响应解析后，代码才能用 `data["choices"][0]["message"]["content"]` 读取生成内容。 | 阶段 4 | 已记录 |
+| `httpx.HTTPStatusError` 和 `httpx.HTTPError` 有什么区别？ | `HTTPStatusError` 是 `response.raise_for_status()` 遇到错误状态码时抛出的异常，例如 401、429、500；`HTTPError` 是更宽泛的 httpx HTTP 异常基类，覆盖连接失败、超时、DNS 错误、请求发送失败、响应读取失败等。捕获时应先写更具体的 `HTTPStatusError`，再写更宽泛的 `HTTPError`。 | 阶段 4 | 已记录 |
+| `raise ... from exc` 是什么？ | `raise HTTPException(...) from exc` 表示抛出新的异常，同时保留原始异常 `exc` 作为原因。这样 traceback 能看到错误链：原始错误可能是 `HTTPStatusError`，转换后的对外错误是 FastAPI `HTTPException`。这有利于调试。 | 阶段 4 | 已记录 |
+| OpenAI-compatible 响应里的 `choices[0].message.content` 是什么？ | Chat Completions 常见响应结构是 `{"choices": [{"message": {"role": "assistant", "content": "模型生成内容"}}]}`。所以 `data["choices"][0]["message"]["content"]` 的意思是：从 choices 数组取第一个结果，再取 message 对象里的 content 字段。阶段 4 只需要记住模型真正生成的文本通常在 `choices[0].message.content`。 | 阶段 4 | 已记录 |
+| `except (KeyError, IndexError, TypeError) as exc` 为什么有括号？ | 这是 Python 一次捕获多个异常类型的语法，不是解构赋值。括号里是一个异常类型元组，表示发生 `KeyError`、`IndexError`、`TypeError` 任意一种都进入这个分支。当前用于处理模型响应格式异常：缺字段会 `KeyError`，数组为空会 `IndexError`，层级类型不对可能 `TypeError`。 | 阶段 4 | 已记录 |
+| Python 的 tuple 元组是什么？ | tuple 是 Python 的有序数据结构，写法通常是圆括号，例如 `("焦虑", "委屈")`；list 用方括号，例如 `["焦虑", "委屈"]`。两者都能保存一组有顺序的数据，主要区别是 list 可以修改，tuple 通常不可修改，所以 tuple 常用于表示一组固定值。在 `except (KeyError, IndexError, TypeError) as exc` 中，括号里的就是异常类型 tuple，表示这几个异常任意一个都由同一个分支处理。 | 阶段 4 | 已记录 |
+| 为什么要用 `HTTPException` 转换错误，而不是都返回 500？ | 500 表示后端内部未知错误，如果所有失败都变成 500，前端和开发者很难判断具体原因。阶段 4 里，缺少 `LLM_API_KEY` 返回 503，表示服务因配置缺失暂不可用；模型上游调用失败或响应格式异常返回 502，表示后端依赖的上游模型服务失败。用 `HTTPException` 把内部错误转换成更具体的 HTTP 响应，可以让前端提示更清晰，也让排查问题更快。 | 阶段 4 | 已记录 |
+| `await` 是不是就是等这一步完成？ | 对当前请求/当前函数来说，是的：`ai_report = await generate_reflection_report(payload)` 必须等模型返回报告后，才会继续创建数据库记录。但对整个 FastAPI 服务来说，`await` 等网络 IO 时会把执行权让出去，事件循环可以先处理其他请求。简单记：`await` 对当前函数是等待下一步结果；对整个异步服务是挂起当前任务，不阻塞所有任务。 | 阶段 4 | 已记录 |
+| 事件循环是什么？ | 事件循环可以理解成异步程序里的任务调度器。它负责管理多个异步任务：当某个任务执行到 `await` 需要等待网络/IO 结果时，事件循环会先把这个任务挂起，转去执行其他已经准备好的任务；等 IO 完成后，再恢复原任务，从 `await` 后面继续执行。FastAPI 的 async 代码和 JavaScript 的 `await fetch(...)` 都依赖类似的事件循环机制。简单记：事件循环负责在任务等待 IO 时切出去做别的事，等结果回来再切回来。 | 阶段 4 | 已记录 |
+| Clash 为什么会导致 `httpx` 报 SOCKS 相关错误？ | Clash 通常会在系统或 WSL 终端里设置代理环境变量，例如 `HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY=socks5://...`。`httpx` 默认会读取这些环境变量并尝试走代理；如果代理是 SOCKS，但只安装了普通 `httpx`，就可能报 `Using SOCKS proxy, but the 'socksio' package is not installed.`。解决方式是把依赖改成 `httpx[socks]>=0.27.0` 并重新安装 requirements，让 `httpx` 额外安装 `socksio` 来支持 SOCKS 代理。可以用 `env | grep -i proxy` 检查当前终端是否存在代理环境变量。 | 阶段 4 | 已记录 |
+| 为什么阶段 4 要返回上游模型错误摘要？ | 如果模型 API 返回 400/401/429/500 时，后端只返回 `LLM API request failed with status 400`，排查成本很高，无法快速判断是模型名不支持、鉴权失败、限流还是请求体不兼容。阶段 4 增加了安全的上游错误摘要：只截取响应正文前 500 字符，不输出请求头或 API Key。这样前端/开发者能看到可排查信息，同时避免泄露敏感凭据。 | 阶段 4 | 已记录 |
+| 如何把项目从 `/mnt/c` 迁移到 WSL 原生目录？ | 使用 `rsync` 复制源码和 Git 仓库，同时排除依赖、构建缓存、虚拟环境和本地数据库。命令：`mkdir -p ~/projects && rsync -av --exclude 'frontend/node_modules' --exclude 'frontend/.next' --exclude 'backend/.venv' --exclude 'backend/*.db' --exclude '**/__pycache__' /mnt/c/yun_project/mind-intelligence-agent/ ~/projects/mind-intelligence-agent/`。`mkdir -p` 创建目标父目录；`&&` 表示前一个命令成功后再执行后一个；`rsync -av` 表示按目录结构同步并显示过程；`--exclude` 用来跳过可重建的生成物。迁移后应以 `/home/yunyun/projects/mind-intelligence-agent` 为准，避免 `/mnt/c` 下的文件监听、SQLite 写入和缓存问题。 | 阶段 4 | 已记录 |
 | `useState("")` 为什么可以用空字符串？ | `useState` 需要一个初始值。页面首次渲染时还没有真正的 `session_id`，所以先用空字符串表示“尚未初始化”，后续在 `useEffect` 中调用 `setSessionId(nextSessionId)` 更新为真实值。 | 阶段 3 | 已记录 |
 | `useState("")` 为什么不用显式类型声明？ | TypeScript 可以根据初始值推断类型。`useState("")` 的初始值是字符串，所以推断 `sessionId` 是 `string`。但如果初始值不能准确表达类型，就需要显式写，例如空数组 `useState<ReflectionListItem[]>([])`，因为 `[]` 本身推不出数组元素类型。 | 阶段 3 | 已记录 |
 | `const [sessionId, setSessionId] = useState("")` 怎么理解？ | `useState` 返回一个固定结构的数组：第一项是当前状态值，第二项是更新状态的函数。变量名可以自定义，但 React 社区约定写成 `[xxx, setXxx]`，例如 `sessionId` 和 `setSessionId`。 | 阶段 3 | 已记录 |
@@ -226,7 +256,7 @@
 | 阶段 1 | 项目骨架 | 前端 Next.js、后端 FastAPI、健康检查、README | 进行中 |
 | 阶段 2 | SQLite 数据库 | reflection_records 表和 CRUD 接口 | 进行中 |
 | 阶段 3 | 前端表单和历史记录 | 表单、session_id、列表、详情、删除 | 进行中 |
-| 阶段 4 | 接入大模型 API | 后端模型调用、Markdown 报告、保存记录 | 未开始 |
+| 阶段 4 | 接入大模型 API | 后端模型调用、Markdown 报告、保存记录 | 进行中 |
 | 阶段 5 | 流式输出 | 后端流式响应、前端逐步展示、异常状态 | 未开始 |
 | 阶段 6 | 体验完善 | Markdown 渲染、校验、错误处理、隐私提示 | 未开始 |
 
@@ -265,6 +295,14 @@
 - 当前理解：阶段 3 的重点是让前端状态、表单输入和后端 CRUD 接口连起来。
 - 卡点记录：打开前端页面时出现 Next.js Runtime Error：`Cannot find module './833.js'`。排查发现当前终端 Node 版本是 `v16.20.2`，而项目要求 Node 20，且 `.next` 编译缓存可能不一致。处理方式：停止前端 dev server，执行 `nvm use 20` 确认 `node -v` 为 20，再删除 `frontend/.next` 并重新执行 `npm run dev`。经验：热更新适合普通源码改动，但依赖变化、Node 版本变化、`.next` chunk 缺失、manifest 不一致等问题应重启服务并清理生成缓存。
 - 卡点记录：前端提交复盘记录时后端返回 500，后端日志为 `sqlite3.OperationalError: attempt to write a readonly database`。原因是 SQLite 配置 `sqlite:///./reflection_records.db` 使用相对路径，实际数据库位置取决于启动 `uvicorn` 时所在目录；旧后端进程可能连接了旧启动目录下的只读/异常数据库。处理方式：停止后端服务，固定从 `backend/` 目录重新启动，确认 `reflection_records.db` 生成在 `backend/` 下后重新测试成功。经验：重启经常能解决运行态、旧连接、启动目录、热更新残留问题，但要同时理解根因，避免把所有问题都当成“玄学重启”。
+
+### 阶段 4：接入大模型 API
+
+- 日期：2026-07-05
+- 已完成：新增后端大模型配置读取、Prompt 管理、OpenAI-compatible 非流式模型调用，并把创建复盘记录流程改为“生成 AI 报告后保存 SQLite”。
+- 当前实现：前端不再提交测试 `ai_report`，只提交用户输入和 `session_id`；后端负责调用大模型生成 Markdown 报告。
+- 当前理解：API Key 必须只放在后端 `.env`，前端只能请求自己的后端接口，不能直接调用模型服务。
+- 待验证：需要配置真实 `LLM_API_KEY` 后，从前端提交表单验证 AI 报告生成和保存。
 
 ## 待解决问题
 

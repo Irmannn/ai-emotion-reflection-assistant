@@ -9,8 +9,6 @@ import { createReflection, deleteReflection, getReflection, listReflections } fr
 import { getOrCreateSessionId } from "./lib/session";
 import type { ReflectionDetail as ReflectionDetailType, ReflectionFormValues, ReflectionListItem } from "./types/reflection";
 
-const STAGE_3_TEST_REPORT = "阶段 3 前端联调测试报告：当前记录已成功从前端保存到后端 SQLite。";
-
 export default function Home() {
   const [sessionId, setSessionId] = useState("");
   const [records, setRecords] = useState<ReflectionListItem[]>([]);
@@ -54,13 +52,12 @@ export default function Home() {
     try {
       const createdRecord = await createReflection({
         ...values,
-        session_id: sessionId,
-        ai_report: STAGE_3_TEST_REPORT
+        session_id: sessionId
       });
       await loadRecords(sessionId);
       setSelectedRecord(createdRecord);
     } catch {
-      setError("保存失败，请确认后端服务已启动。");
+      setError("生成失败，请确认后端服务已启动，并且后端已配置 LLM_API_KEY。");
     } finally {
       setIsSubmitting(false);
     }
@@ -102,12 +99,12 @@ export default function Home() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dff3ea,transparent_34%),linear-gradient(135deg,#fffaf3,#edf7f2)] px-5 py-8 text-ink md:px-8">
       <section className="mx-auto flex max-w-7xl flex-col gap-8">
         <header className="rounded-[2rem] border border-white/70 bg-white/75 p-7 shadow-[0_24px_80px_rgba(23,32,51,0.12)] backdrop-blur md:p-9">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-clay">Stage 3 / Frontend Integration</p>
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-clay">Stage 4 / LLM Integration</p>
           <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
             <div>
               <h1 className="text-4xl font-bold tracking-tight md:text-6xl">AI 情绪复盘助手</h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-700">
-                当前阶段实现前端表单、匿名 session、历史记录列表和详情展示，并与 FastAPI + SQLite 后端完成联调。
+                当前阶段由后端调用大模型生成 Markdown 复盘报告，并保存到 SQLite 历史记录中。
               </p>
             </div>
             <div className="rounded-3xl bg-calm p-4 text-sm leading-6 text-slate-600">

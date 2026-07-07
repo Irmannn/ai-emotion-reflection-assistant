@@ -13,7 +13,7 @@
 
 ## 当前阶段
 
-项目按阶段推进，当前处于阶段 3：前端表单和历史记录。
+项目按阶段推进，当前处于阶段 4：接入大模型 API。
 
 - 创建前端 Next.js 项目结构
 - 创建后端 FastAPI 项目结构
@@ -23,6 +23,8 @@
 - 实现复盘记录基础 CRUD 接口
 - 实现前端情绪复盘表单
 - 实现前端历史记录列表、详情和删除
+- 后端读取大模型环境变量
+- 后端调用大模型生成 Markdown 复盘报告
 
 ## 学习目标
 
@@ -79,8 +81,20 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
+cp .env.example .env
 uvicorn app.main:app --reload
 ```
+
+首次接入大模型前，需要编辑 `backend/.env`：
+
+```env
+LLM_API_KEY=你的模型服务 API Key
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_MODEL=gpt-4o-mini
+LLM_TIMEOUT_SECONDS=60
+```
+
+`LLM_BASE_URL` 使用 OpenAI-compatible endpoint。你可以根据所用服务商改成 DeepSeek、OpenAI 或通义千问兼容接口地址。
 
 健康检查：
 
@@ -120,8 +134,18 @@ curl http://localhost:8000/health
 - 用户可以删除历史记录
 - 刷新页面后，`session_id` 保持不变
 
+## 阶段 4 验收标准
+
+- 后端可以从 `.env` 读取大模型配置
+- API Key 不暴露到前端代码
+- 前端提交表单后，后端可以生成 AI 复盘报告
+- AI 报告保存到 SQLite
+- 历史详情可以展示 AI 报告
+- 缺少 `LLM_API_KEY` 时，前端可以看到明确错误提示
+
 ## 当前本机环境备注
 
 - 仓库包含 `.nvmrc`，前端应使用 Node.js 20。
 - 如果当前 shell 默认是 Node.js 16，请先执行 `nvm use 20`。
 - 如果创建 Python 虚拟环境时报 `ensurepip is not available`，需要先安装系统包 `python3.12-venv`。
+- 如果 Next.js dev server 在 `/mnt/c` 下出现 `.next` module/chunk 报错，先确认 Node.js 20，必要时删除 `.next` 后重启。

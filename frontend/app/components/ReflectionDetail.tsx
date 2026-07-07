@@ -15,7 +15,7 @@ export function ReflectionDetail({ record, isDeleting, onDelete }: ReflectionDet
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-clay">Detail</p>
         <h2 className="mt-2 text-2xl font-bold">复盘详情</h2>
         <p className="mt-4 rounded-2xl border border-dashed border-slate-200 p-4 text-sm leading-6 text-slate-500">
-          从历史记录中选择一条，查看完整输入和阶段 3 测试报告。
+          从历史记录中选择一条，查看完整输入和 AI 复盘报告。
         </p>
       </section>
     );
@@ -45,7 +45,7 @@ export function ReflectionDetail({ record, isDeleting, onDelete }: ReflectionDet
         <DetailItem label="自动想法" value={record.automatic_thoughts || "未填写"} />
         <DetailItem label="身体反应" value={record.body_reaction || "未填写"} />
         <DetailItem label="分析方向" value={record.focus_area} />
-        <DetailItem label="阶段 3 测试报告" value={record.ai_report || "暂无"} />
+        <DetailItem label="AI 复盘报告" value={record.ai_report || "暂无"} />
       </div>
     </section>
   );
@@ -55,7 +55,7 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-white p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
-      <p className="mt-2 leading-7">{value}</p>
+      <p className="mt-2 whitespace-pre-wrap leading-7">{value}</p>
     </div>
   );
 }

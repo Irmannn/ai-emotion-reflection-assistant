@@ -11,7 +11,6 @@ export type ReflectionFormValues = {
 
 export type CreateReflectionPayload = ReflectionFormValues & {
   session_id: string;
-  ai_report: string;
 };
 
 export type ReflectionListItem = {

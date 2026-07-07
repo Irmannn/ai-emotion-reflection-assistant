@@ -18,7 +18,7 @@ const initialValues: ReflectionFormValues = {
 
 type ReflectionFormProps = {
   isSubmitting: boolean;
-  onSubmit: (values: ReflectionFormValues) => Promise<void>;
+  onSubmit: (values: ReflectionFormValues) => Promise<boolean>;
 };
 
 export function ReflectionForm({ isSubmitting, onSubmit }: ReflectionFormProps) {
@@ -34,8 +34,10 @@ export function ReflectionForm({ isSubmitting, onSubmit }: ReflectionFormProps) 
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await onSubmit(values);
-    setValues(initialValues);
+    const isSuccess = await onSubmit(values);
+    if (isSuccess) {
+      setValues(initialValues);
+    }
   }
 
   return (

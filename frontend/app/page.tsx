@@ -44,7 +44,7 @@ export default function Home() {
   async function handleCreateReflection(values: ReflectionFormValues) {
     if (!sessionId) {
       setError("session_id 尚未初始化，请刷新页面重试。");
-      return;
+      return false;
     }
 
     setIsSubmitting(true);
@@ -56,8 +56,10 @@ export default function Home() {
       });
       await loadRecords(sessionId);
       setSelectedRecord(createdRecord);
+      return true;
     } catch {
       setError("生成失败，请确认后端服务已启动，并且后端已配置 LLM_API_KEY。");
+      return false;
     } finally {
       setIsSubmitting(false);
     }

@@ -13,6 +13,14 @@
 | 阶段 5 | [stage-5-streaming.md](stage-5-streaming.md) | 流式输出、SSE、异步迭代、前端读取流 |
 | 通用 | [glossary.md](glossary.md) | 跨阶段通用概念 |
 
+## 后续阶段规划
+
+| 阶段 | 主题 | 目标 |
+| --- | --- | --- |
+| 阶段 6 | RAG 知识库检索增强 | 文档解析、Chunking、Embedding、向量检索、引用资料生成回答 |
+| 阶段 7 | Agent / Tool Calling 工作流 | 工具调用、查询历史、生成行动计划、简单工作流 |
+| 阶段 8 | 生产化与简历展示 | Markdown 渲染、表单校验、错误重试、隐私提示、README 和部署 |
+
 ## 归档
 
 - [archive-full-notes.md](archive-full-notes.md)：拆分前的完整原始笔记，保留历史细节，方便搜索。

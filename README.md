@@ -10,6 +10,7 @@
 - 后端调用大模型 API
 - 流式输出 AI 复盘报告
 - 历史记录和反馈保存
+- 后续计划接入 RAG、Agent / Tool Calling 和生产化能力
 
 ## 当前阶段
 
@@ -32,10 +33,22 @@
 
 这个项目用于从前端开发逐步转型到 LLM / Agent 应用工程师。第一阶段重点不是复杂 Agent 能力，而是先完成一个可运行、可迭代、可展示的 AI 产品闭环。
 
+后续路线按能力递进推进：
+
+```text
+全栈闭环
+-> LLM API
+-> 流式输出
+-> RAG 知识库检索增强
+-> Agent / Tool Calling 工作流
+-> 生产化与简历展示
+```
+
 ## 项目资料
 
 - `docs/PRD.md`：产品需求文档
 - `docs/DEVELOPMENT_PLAN.md`：阶段化开发要求
+- `docs/AI_ENGINEER_SKILL_MAP.md`：AI / Agent 工程师能力地图与项目阶段覆盖
 - `docs/STAGE_5_FLOW.md`：阶段 5 流式输出流程图
 - `LEARNING_NOTES.md`：学习疑问、阶段复盘和项目笔记
 - `learing-road-overview.png`：学习路线图
@@ -154,6 +167,27 @@ curl http://localhost:8000/health
 - 新记录详情能展示完整 AI 报告
 - 生成失败时表单内容不清空
 - 后端缺少 API Key 或模型报错时，前端能显示错误
+
+## 阶段 6 目标：RAG 知识库检索增强
+
+- 建立情绪复盘/心理学自助知识库
+- 实现文档解析、文本切分和向量化
+- 接入向量检索
+- 生成 AI 复盘报告时检索相关资料
+- 在 AI 报告中展示参考依据或引用片段
+
+## 阶段 7 目标：Agent / Tool Calling 工作流
+
+- 设计可被 AI 调用的后端工具函数
+- 让 AI 根据用户输入决定是否查询历史记录、生成行动计划或更新反馈
+- 引入简单工作流状态，避免只做单轮问答
+
+## 阶段 8 目标：生产化与简历展示
+
+- Markdown 渲染、表单校验、Loading / Error / Retry 状态
+- 免责声明和隐私提示完善
+- README、截图和项目亮点说明完善
+- 可选：切换 PostgreSQL/MySQL、部署、日志和监控
 
 ## 当前本机环境备注
 

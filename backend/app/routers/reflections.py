@@ -1,10 +1,13 @@
 from datetime import datetime, timezone
+import json
+from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.llm_client import generate_reflection_report
+from app.llm_client import generate_reflection_report, stream_reflection_report
 from app.models import ReflectionRecord
 from app.schemas import (
     DeleteResponse,
@@ -35,9 +38,7 @@ def get_record_for_session(record_id: int, session_id: str, session: Session) ->
     return record
 
 
-@router.post("", response_model=ReflectionDetail, status_code=status.HTTP_201_CREATED)
-async def create_reflection(payload: ReflectionCreate, session: Session = Depends(get_session)) -> ReflectionRecord:
-    ai_report = await generate_reflection_report(payload)
+def create_record_from_report(payload: ReflectionCreate, ai_report: str, session: Session) -> ReflectionRecord:
     record = ReflectionRecord(
         session_id=payload.session_id,
         event_text=payload.event_text,
@@ -52,6 +53,40 @@ async def create_reflection(payload: ReflectionCreate, session: Session = Depend
     session.commit()
     session.refresh(record)
     return record
+
+
+def sse_event(event: str, data: dict[str, object]) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+@router.post("", response_model=ReflectionDetail, status_code=status.HTTP_201_CREATED)
+async def create_reflection(payload: ReflectionCreate, session: Session = Depends(get_session)) -> ReflectionRecord:
+    ai_report = await generate_reflection_report(payload)
+    return create_record_from_report(payload, ai_report, session)
+
+
+@router.post("/stream")
+def stream_create_reflection(payload: ReflectionCreate, session: Session = Depends(get_session)) -> StreamingResponse:
+    async def event_generator() -> AsyncIterator[str]:
+        chunks: list[str] = []
+        try:
+            async for content in stream_reflection_report(payload):
+                chunks.append(content)
+                yield sse_event("delta", {"content": content})
+
+            ai_report = "".join(chunks).strip()
+            if not ai_report:
+                yield sse_event("error", {"message": "LLM API returned an empty report."})
+                return
+
+            record = create_record_from_report(payload, ai_report, session)
+            yield sse_event("done", {"record_id": record.id})
+        except HTTPException as exc:
+            yield sse_event("error", {"message": exc.detail})
+        except Exception:
+            yield sse_event("error", {"message": "Reflection stream failed."})
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.get("", response_model=list[ReflectionListItem])

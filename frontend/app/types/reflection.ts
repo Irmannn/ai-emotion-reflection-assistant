@@ -36,3 +36,7 @@ export type ReflectionDetail = {
   created_at: string;
   updated_at: string;
 };
+
+export type StreamCreateReflectionResult = {
+  record_id: number;
+};

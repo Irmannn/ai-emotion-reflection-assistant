@@ -10,6 +10,7 @@
 | 阶段 2 | [stage-2-backend-crud.md](stage-2-backend-crud.md) | SQLite、SQLModel、CRUD、FastAPI 路由 |
 | 阶段 3 | [stage-3-frontend-form.md](stage-3-frontend-form.md) | React 表单、状态、API 封装、历史记录 |
 | 阶段 4 | [stage-4-llm-api.md](stage-4-llm-api.md) | `.env`、API Key、Prompt、httpx、LLM 调用 |
+| 阶段 5 | [stage-5-streaming.md](stage-5-streaming.md) | 流式输出、SSE、异步迭代、前端读取流 |
 | 通用 | [glossary.md](glossary.md) | 跨阶段通用概念 |
 
 ## 归档

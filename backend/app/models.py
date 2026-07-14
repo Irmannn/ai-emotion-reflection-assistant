@@ -22,3 +22,27 @@ class ReflectionRecord(SQLModel, table=True):
     feedback: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
+
+
+class KnowledgeChunk(SQLModel, table=True):
+    __tablename__ = "knowledge_chunks"
+
+    id: int | None = Field(default=None, primary_key=True)
+    source: str = Field(index=True, nullable=False)
+    title: str = Field(index=True, nullable=False)
+    content: str
+    embedding: str
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class ReflectionReference(SQLModel, table=True):
+    __tablename__ = "reflection_references"
+
+    id: int | None = Field(default=None, primary_key=True)
+    reflection_id: int = Field(index=True, foreign_key="reflection_records.id")
+    knowledge_chunk_id: int = Field(index=True, foreign_key="knowledge_chunks.id")
+    source: str
+    title: str
+    content_preview: str
+    score: float
+    created_at: datetime = Field(default_factory=utc_now)

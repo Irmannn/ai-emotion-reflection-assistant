@@ -50,6 +50,7 @@
 - `docs/DEVELOPMENT_PLAN.md`：阶段化开发要求
 - `docs/AI_ENGINEER_SKILL_MAP.md`：AI / Agent 工程师能力地图与项目阶段覆盖
 - `docs/STAGE_5_FLOW.md`：阶段 5 流式输出流程图
+- `docs/STAGE_6_DESIGN.md`：阶段 6 RAG 知识库检索增强设计
 - `LEARNING_NOTES.md`：学习疑问、阶段复盘和项目笔记
 - `learing-road-overview.png`：学习路线图
 - `tk-learning-method.png`：自学方法参考
@@ -108,9 +109,15 @@ LLM_API_KEY=你的模型服务 API Key
 LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL=gpt-4o-mini
 LLM_TIMEOUT_SECONDS=60
+
+EMBEDDING_API_KEY=你的 Embedding 服务 API Key
+EMBEDDING_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+EMBEDDING_MODEL=text-embedding-v4
+EMBEDDING_DIMENSIONS=1024
 ```
 
 `LLM_BASE_URL` 使用 OpenAI-compatible endpoint。你可以根据所用服务商改成 DeepSeek、OpenAI 或通义千问兼容接口地址。
+`EMBEDDING_BASE_URL` 用于阶段 6 RAG 向量化，可以和 `LLM_BASE_URL` 使用不同服务商。
 
 健康检查：
 
@@ -123,6 +130,24 @@ curl http://localhost:8000/health
 ```json
 {"status":"ok"}
 ```
+
+## 导入本地知识库
+
+阶段 6 RAG 需要先将本地 Markdown 知识库导入 SQLite：
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m app.rag.ingestion
+```
+
+知识库源文件放在：
+
+```text
+backend/knowledge_base/
+```
+
+注意：`backend/knowledge_base/*.md` 已被 `.gitignore` 排除，不会提交到 GitHub。入库命令会把这些 Markdown 内容发送给配置的 Embedding API 生成向量，请只放入你确认可以发送到该服务商的资料。
 
 ## 阶段 1 验收标准
 

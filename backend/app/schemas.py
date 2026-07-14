@@ -24,6 +24,13 @@ class ReflectionListItem(SQLModel):
     created_at: datetime
 
 
+class KnowledgeReference(SQLModel):
+    source: str
+    title: str
+    content_preview: str
+    score: float
+
+
 class ReflectionDetail(SQLModel):
     id: int
     session_id: str
@@ -37,6 +44,7 @@ class ReflectionDetail(SQLModel):
     feedback: str | None
     created_at: datetime
     updated_at: datetime
+    references: list[KnowledgeReference] = Field(default_factory=list)
 
 
 class FeedbackUpdate(SQLModel):

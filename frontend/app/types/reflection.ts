@@ -22,6 +22,13 @@ export type ReflectionListItem = {
   created_at: string;
 };
 
+export type KnowledgeReference = {
+  source: string;
+  title: string;
+  content_preview: string;
+  score: number;
+};
+
 export type ReflectionDetail = {
   id: number;
   session_id: string;
@@ -35,6 +42,7 @@ export type ReflectionDetail = {
   feedback: string | null;
   created_at: string;
   updated_at: string;
+  references: KnowledgeReference[];
 };
 
 export type StreamCreateReflectionResult = {

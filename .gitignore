@@ -21,6 +21,10 @@ build/
 *.sqlite
 *.sqlite3
 
+# Local knowledge base source files may contain private or licensed content.
+backend/knowledge_base/*.md
+!backend/knowledge_base/README.md
+
 # Logs
 *.log
 npm-debug.log*

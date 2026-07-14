@@ -36,8 +36,14 @@ SYSTEM_PROMPT = f"""你是一个温和、克制的心理学自助复盘助手。
 """
 
 
-def build_reflection_user_prompt(payload: ReflectionCreate) -> str:
+def build_reflection_user_prompt(payload: ReflectionCreate, retrieved_context: str = "") -> str:
     emotion_tags = "、".join(payload.emotion_tags)
+    knowledge_section = ""
+    if retrieved_context:
+        knowledge_section = f"""
+可参考的知识库资料：
+{retrieved_context}
+"""
 
     return f"""请根据以下用户输入生成一份情绪复盘报告。
 
@@ -48,6 +54,7 @@ def build_reflection_user_prompt(payload: ReflectionCreate) -> str:
 - 自动想法：{payload.automatic_thoughts or "未填写"}
 - 身体反应：{payload.body_reaction or "未填写"}
 - 重点分析方向：{payload.focus_area}
+{knowledge_section}
 
 要求：
 - 使用中文。
@@ -55,4 +62,7 @@ def build_reflection_user_prompt(payload: ReflectionCreate) -> str:
 - 每个部分都要有具体内容。
 - 语气温和、克制、具体。
 - 建议要小而可执行。
+- 如果提供了知识库资料，优先结合资料进行分析，但不要把资料当作诊断依据。
+- 如果资料与用户输入相关性不足，可以基于用户输入做一般性复盘。
+- 在报告末尾简单列出参考了哪些资料标题。
 """

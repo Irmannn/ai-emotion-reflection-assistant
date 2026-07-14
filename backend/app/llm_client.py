@@ -27,12 +27,12 @@ def _truncate_upstream_error(text: str) -> str:
     return f"{text[:MAX_UPSTREAM_ERROR_LENGTH]}..."
 
 
-def _build_chat_request_body(payload: ReflectionCreate, *, stream: bool = False) -> dict[str, Any]:
+def _build_chat_request_body(payload: ReflectionCreate, *, stream: bool = False, retrieved_context: str = "") -> dict[str, Any]:
     return {
         "model": get_settings().llm_model,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": build_reflection_user_prompt(payload)},
+            {"role": "user", "content": build_reflection_user_prompt(payload, retrieved_context=retrieved_context)},
         ],
         "temperature": 0.4,
         "stream": stream,
@@ -56,12 +56,12 @@ def _ensure_api_key_configured() -> None:
     )
 
 
-async def generate_reflection_report(payload: ReflectionCreate) -> str:
+async def generate_reflection_report(payload: ReflectionCreate, retrieved_context: str = "") -> str:
     """Generate a non-streaming Markdown reflection report with an OpenAI-compatible API."""
     settings = get_settings()
 
     _ensure_api_key_configured()
-    request_body = _build_chat_request_body(payload)
+    request_body = _build_chat_request_body(payload, retrieved_context=retrieved_context)
 
     try:
         async with httpx.AsyncClient(timeout=settings.llm_timeout_seconds) as client:
@@ -81,7 +81,7 @@ async def generate_reflection_report(payload: ReflectionCreate) -> str:
     except httpx.HTTPError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="LLM API request failed.",
+            detail=f"LLM API request failed: {type(exc).__name__}.",
         ) from exc
 
     try:
@@ -101,7 +101,7 @@ async def generate_reflection_report(payload: ReflectionCreate) -> str:
     return report.strip()
 
 
-async def stream_reflection_report(payload: ReflectionCreate) -> AsyncIterator[str]:
+async def stream_reflection_report(payload: ReflectionCreate, retrieved_context: str = "") -> AsyncIterator[str]:
     """Yield Markdown report chunks from an OpenAI-compatible streaming API."""
     settings = get_settings()
     _ensure_api_key_configured()
@@ -112,7 +112,7 @@ async def stream_reflection_report(payload: ReflectionCreate) -> AsyncIterator[s
                 "POST",
                 _chat_completions_url(settings.llm_base_url),
                 headers=_authorization_headers(),
-                json=_build_chat_request_body(payload, stream=True),
+                json=_build_chat_request_body(payload, stream=True, retrieved_context=retrieved_context),
             ) as response:
                 if response.is_error:
                     body = (await response.aread()).decode("utf-8", errors="replace").strip()
@@ -143,5 +143,5 @@ async def stream_reflection_report(payload: ReflectionCreate) -> AsyncIterator[s
     except httpx.HTTPError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="LLM API streaming request failed.",
+            detail=f"LLM API streaming request failed: {type(exc).__name__}.",
         ) from exc

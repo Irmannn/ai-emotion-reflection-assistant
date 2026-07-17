@@ -46,3 +46,16 @@ class ReflectionReference(SQLModel, table=True):
     content_preview: str
     score: float
     created_at: datetime = Field(default_factory=utc_now)
+
+
+class AgentToolCallLog(SQLModel, table=True):
+    __tablename__ = "agent_tool_calls"
+
+    id: int | None = Field(default=None, primary_key=True)
+    session_id: str = Field(index=True, nullable=False)
+    tool_name: str = Field(index=True, nullable=False)
+    arguments_json: str
+    result_summary: str
+    status: str = Field(index=True, nullable=False)
+    error_message: str | None = Field(default=None)
+    created_at: datetime = Field(default_factory=utc_now)

@@ -14,7 +14,7 @@
 
 ## 当前阶段
 
-项目按阶段推进，当前处于阶段 5：实现流式输出。
+项目按阶段推进，当前已完成阶段 6：RAG 知识库检索增强。下一阶段准备进入阶段 7：Agent / Tool Calling 工作流。
 
 - 创建前端 Next.js 项目结构
 - 创建后端 FastAPI 项目结构
@@ -28,6 +28,11 @@
 - 后端调用大模型生成 Markdown 复盘报告
 - 前端提交后实时展示 AI 流式输出
 - 流式完成后保存完整报告到 SQLite
+- 接入 Embedding API
+- 导入本地 Markdown 知识库
+- 实现基础向量检索和 Top-K 召回
+- AI 报告结合 RAG 检索结果生成
+- 前端展示报告参考资料
 
 ## 学习目标
 
@@ -51,6 +56,7 @@
 - `docs/AI_ENGINEER_SKILL_MAP.md`：AI / Agent 工程师能力地图与项目阶段覆盖
 - `docs/STAGE_5_FLOW.md`：阶段 5 流式输出流程图
 - `docs/STAGE_6_DESIGN.md`：阶段 6 RAG 知识库检索增强设计
+- `docs/STAGE_7_DESIGN.md`：阶段 7 Agent / Tool Calling 工作流设计
 - `LEARNING_NOTES.md`：学习疑问、阶段复盘和项目笔记
 - `learing-road-overview.png`：学习路线图
 - `tk-learning-method.png`：自学方法参考

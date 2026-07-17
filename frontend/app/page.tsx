@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react";
 
+import { AgentPanel } from "./components/AgentPanel";
 import { HistoryList } from "./components/HistoryList";
 import { ReflectionDetail } from "./components/ReflectionDetail";
 import { ReflectionForm } from "./components/ReflectionForm";
-import { deleteReflection, getReflection, listReflections, streamCreateReflection } from "./lib/api";
+import { chatWithAgent, deleteReflection, getReflection, listReflections, streamCreateReflection } from "./lib/api";
 import { getOrCreateSessionId } from "./lib/session";
-import type { ReflectionDetail as ReflectionDetailType, ReflectionFormValues, ReflectionListItem } from "./types/reflection";
+import type {
+  AgentChatResponse,
+  ReflectionDetail as ReflectionDetailType,
+  ReflectionFormValues,
+  ReflectionListItem
+} from "./types/reflection";
 
 export default function Home() {
   const [sessionId, setSessionId] = useState("");
@@ -17,7 +23,9 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isAgentRunning, setIsAgentRunning] = useState(false);
   const [streamingReport, setStreamingReport] = useState("");
+  const [agentResult, setAgentResult] = useState<AgentChatResponse | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -112,16 +120,36 @@ export default function Home() {
     }
   }
 
+  async function handleAgentSubmit(message: string) {
+    if (!sessionId) {
+      setError("session_id 尚未初始化，请刷新页面重试。");
+      return;
+    }
+
+    setIsAgentRunning(true);
+    setAgentResult(null);
+    setError("");
+    try {
+      const nextResult = await chatWithAgent(sessionId, message);
+      setAgentResult(nextResult);
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Agent 调用失败，请稍后重试。");
+    } finally {
+      setIsAgentRunning(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dff3ea,transparent_34%),linear-gradient(135deg,#fffaf3,#edf7f2)] px-5 py-8 text-ink md:px-8">
       <section className="mx-auto flex max-w-7xl flex-col gap-8">
         <header className="rounded-[2rem] border border-white/70 bg-white/75 p-7 shadow-[0_24px_80px_rgba(23,32,51,0.12)] backdrop-blur md:p-9">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-clay">Stage 5 / Streaming Output</p>
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-clay">Stage 7 / Agent Tool Calling</p>
           <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
             <div>
               <h1 className="text-4xl font-bold tracking-tight md:text-6xl">AI 情绪复盘助手</h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-700">
-                当前阶段支持流式输出 AI 复盘报告：提交后可以实时看到内容生成，完成后自动保存到 SQLite 历史记录中。
+                当前阶段在 RAG 复盘报告基础上加入 Agent / Tool Calling：AI 可以读取当前 session 的历史复盘，
+                再整理行动建议和触发点总结。
               </p>
             </div>
             <div className="rounded-3xl bg-calm p-4 text-sm leading-6 text-slate-600">
@@ -132,6 +160,8 @@ export default function Home() {
         </header>
 
         {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+
+        <AgentPanel disabled={!sessionId} isRunning={isAgentRunning} result={agentResult} onSubmit={handleAgentSubmit} />
 
         <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
           <ReflectionForm isSubmitting={isSubmitting} onSubmit={handleCreateReflection} />

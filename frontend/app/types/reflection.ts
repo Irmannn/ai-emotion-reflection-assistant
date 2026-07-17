@@ -48,3 +48,16 @@ export type ReflectionDetail = {
 export type StreamCreateReflectionResult = {
   record_id: number;
 };
+
+export type AgentToolCall = {
+  tool_name: string;
+  arguments: Record<string, unknown>;
+  result_summary: string;
+  status: string;
+  error_message: string | null;
+};
+
+export type AgentChatResponse = {
+  answer: string;
+  tool_calls: AgentToolCall[];
+};

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import create_db_and_tables
-from app.routers import reflections
+from app.routers import agent, reflections
 
 
 @asynccontextmanager
@@ -38,3 +38,4 @@ def health_check() -> dict[str, str]:
 
 
 app.include_router(reflections.router)
+app.include_router(agent.router)

@@ -1,4 +1,5 @@
 import type {
+  AgentChatResponse,
   CreateReflectionPayload,
   ReflectionDetail,
   ReflectionListItem,
@@ -26,7 +27,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    throw new Error(await readErrorMessage(response));
   }
 
   return response.json() as Promise<T>;
@@ -111,6 +112,16 @@ export function deleteReflection(recordId: number, sessionId: string): Promise<{
   const params = new URLSearchParams({ session_id: sessionId });
   return request<{ deleted: boolean }>(`/api/reflections/${recordId}?${params.toString()}`, {
     method: "DELETE"
+  });
+}
+
+export function chatWithAgent(sessionId: string, message: string): Promise<AgentChatResponse> {
+  return request<AgentChatResponse>("/api/agent/chat", {
+    method: "POST",
+    body: JSON.stringify({
+      session_id: sessionId,
+      message
+    })
   });
 }
 

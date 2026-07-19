@@ -1,0 +1,133 @@
+<svg width="1440" height="980" viewBox="0 0 1440 980" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1440" y2="980" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F3FBF6"/>
+      <stop offset="0.52" stop-color="#FFF9EE"/>
+      <stop offset="1" stop-color="#EEF6FF"/>
+    </linearGradient>
+    <linearGradient id="route" x1="542" y1="176" x2="842" y2="694" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#173A5B"/>
+      <stop offset="1" stop-color="#2E756D"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#203040" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2L10 6L2 10" stroke="#2F4858" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2L10 6L2 10" stroke="#247B64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2L10 6L2 10" stroke="#B94B4B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      .title { font: 800 34px "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; fill: #172033; }
+      .subtitle { font: 500 17px "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; fill: #526173; }
+      .label { font: 800 20px "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; fill: #172033; }
+      .small { font: 500 15px "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; fill: #5E6B7A; }
+      .tiny { font: 700 13px "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; fill: #687788; letter-spacing: .04em; }
+      .whiteLabel { font: 800 21px "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; fill: #FFFFFF; }
+      .whiteSmall { font: 500 15px "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; fill: #DBF3EE; }
+      .pill { font: 800 13px "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; fill: #FFFFFF; }
+      .note { font: 700 15px "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; fill: #7A3D0C; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="980" rx="34" fill="url(#bg)"/>
+  <text x="70" y="72" class="title">阶段 8：一次 Agent 消息的完整生命周期</text>
+  <text x="70" y="106" class="subtitle">核心：先可靠保存状态，再执行工具循环，最后将文本和过程事件通过 SSE 实时发送给前端。</text>
+
+  <rect x="70" y="158" width="215" height="112" rx="24" fill="#FFFFFF" filter="url(#shadow)"/>
+  <circle cx="118" cy="210" r="28" fill="#E8F4FF"/>
+  <path d="M118 195C125 195 130 200 130 207C130 214 125 219 118 219C111 219 106 214 106 207C106 200 111 195 118 195Z" fill="#315A7D"/>
+  <path d="M96 238C101 227 109 223 118 223C127 223 135 227 140 238" stroke="#315A7D" stroke-width="7" stroke-linecap="round"/>
+  <text x="164" y="204" class="label">用户</text>
+  <text x="164" y="233" class="small">发送一条消息</text>
+
+  <rect x="350" y="158" width="230" height="112" rx="24" fill="#FFFFFF" filter="url(#shadow)"/>
+  <rect x="388" y="187" width="56" height="45" rx="8" fill="#EAF8F0" stroke="#6BAE91" stroke-width="3"/>
+  <path d="M398 203H434M398 215H423" stroke="#2F7D68" stroke-width="4" stroke-linecap="round"/>
+  <text x="466" y="204" class="label">Chat UI</text>
+  <text x="466" y="233" class="small">POST /stream</text>
+
+  <rect x="650" y="148" width="310" height="150" rx="28" fill="url(#route)" filter="url(#shadow)"/>
+  <rect x="680" y="178" width="12" height="90" rx="6" fill="#8FE1CB"/>
+  <text x="716" y="204" class="whiteLabel">FastAPI 路由</text>
+  <text x="716" y="235" class="whiteSmall">校验会话归属 · 创建 SSE</text>
+  <text x="716" y="260" class="whiteSmall">event_generator() 总调度</text>
+
+  <rect x="1030" y="158" width="315" height="112" rx="24" fill="#FFFFFF" filter="url(#shadow)"/>
+  <ellipse cx="1085" cy="198" rx="30" ry="12" fill="#DFF2EA" stroke="#2F7D68" stroke-width="3"/>
+  <path d="M1055 198V230C1055 237 1068 243 1085 243C1102 243 1115 237 1115 230V198" stroke="#2F7D68" stroke-width="3"/>
+  <text x="1140" y="204" class="label">SQLite</text>
+  <text x="1140" y="233" class="small">会话 / 消息 / 工具日志</text>
+
+  <rect x="650" y="365" width="310" height="150" rx="28" fill="#FFFFFF" filter="url(#shadow)"/>
+  <circle cx="707" cy="432" r="30" fill="#EAEAFE"/>
+  <path d="M693 432H721M707 418V446M697 422L717 442M717 422L697 442" stroke="#5C58B6" stroke-width="4" stroke-linecap="round"/>
+  <text x="758" y="417" class="label">Agent Client</text>
+  <text x="758" y="445" class="small">读取最近 12 条上下文</text>
+  <text x="758" y="470" class="small">模型判断 / 工具循环 / 文本流</text>
+
+  <rect x="1030" y="365" width="315" height="150" rx="28" fill="#FFFFFF" filter="url(#shadow)"/>
+  <circle cx="1087" cy="431" r="30" fill="#FFF2DF"/>
+  <path d="M1073 431H1101M1087 417V445M1077 421L1097 441M1097 421L1077 441" stroke="#C06B2C" stroke-width="4" stroke-linecap="round"/>
+  <text x="1136" y="417" class="label">模型 API</text>
+  <text x="1136" y="445" class="small">先返回 tool_calls</text>
+  <text x="1136" y="470" class="small">最终以 SSE 返回文本</text>
+
+  <rect x="1030" y="592" width="315" height="120" rx="24" fill="#FFFFFF" filter="url(#shadow)"/>
+  <rect x="1065" y="623" width="56" height="48" rx="10" fill="#EFF8F5"/>
+  <path d="M1078 640H1107M1078 653H1097" stroke="#2F7D68" stroke-width="4" stroke-linecap="round"/>
+  <text x="1145" y="636" class="label">Tool Runner</text>
+  <text x="1145" y="666" class="small">后端校验并执行本地工具</text>
+
+  <rect x="650" y="755" width="310" height="125" rx="26" fill="#EAF8F0" stroke="#79B99E" stroke-width="2" filter="url(#shadow)"/>
+  <text x="694" y="803" class="label">成功：完成会话消息</text>
+  <text x="694" y="834" class="small">pending → completed · 保存完整回答</text>
+  <text x="694" y="859" class="small">SSE done → 前端替换临时气泡</text>
+
+  <rect x="1030" y="755" width="315" height="125" rx="26" fill="#FFF0F0" stroke="#D48A8A" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1071" y="803" class="label">失败：保留用户输入</text>
+  <text x="1071" y="834" class="small">pending → failed · 保存错误摘要</text>
+  <text x="1071" y="859" class="small">SSE error → 用户手动重试</text>
+
+  <path d="M285 214H350" stroke="#2F4858" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="298" y="198" class="tiny">输入</text>
+  <path d="M580 214H650" stroke="#2F4858" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="594" y="198" class="tiny">POST</text>
+
+  <path d="M960 208H1030" stroke="#247B64" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="969" y="192" class="tiny">1. 写 user + pending assistant</text>
+
+  <path d="M805 298V365" stroke="#2F4858" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="824" y="338" class="tiny">2. 最近历史</text>
+
+  <path d="M960 432H1030" stroke="#247B64" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="968" y="416" class="tiny">3. tools + messages</text>
+
+  <path d="M1030 470H960" stroke="#C06B2C" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="965" y="505" class="tiny">tool_calls？</text>
+
+  <path d="M1185 515V592" stroke="#2F4858" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="1202" y="556" class="tiny">是：执行</text>
+
+  <path d="M1030 652C980 640 954 580 936 516" stroke="#247B64" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="948" y="595" class="tiny">tool result + tool_completed</text>
+
+  <path d="M650 452C562 470 545 540 598 596C624 624 648 634 650 636" stroke="#2F4858" stroke-width="3" stroke-dasharray="8 8" marker-end="url(#arrow)"/>
+  <text x="437" y="562" class="tiny">模型只提出意图；后端真正执行</text>
+
+  <path d="M805 515V755" stroke="#247B64" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="826" y="650" class="tiny">否：stream=true → delta → SSE</text>
+
+  <path d="M960 812H1030" stroke="#B94B4B" stroke-width="3" marker-end="url(#arrowRed)"/>
+  <text x="969" y="796" class="tiny">上游异常 / 中断</text>
+
+  <path d="M650 818C562 790 498 700 472 586C450 493 479 392 650 262" stroke="#247B64" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="337" y="522" class="tiny">done：前端完成显示</text>
+
+  <rect x="70" y="905" width="1275" height="42" rx="15" fill="#FFF8E9" stroke="#E4B66A" stroke-width="1.5"/>
+  <text x="96" y="932" class="note">约束：上游失败只发送 error 并标记 failed；阶段 8 不自动重试、不切换模型、不降级为非流式回答。</text>
+</svg>

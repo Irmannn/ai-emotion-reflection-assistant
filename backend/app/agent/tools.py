@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from sqlmodel import Session, select
@@ -30,7 +31,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "search_reflections",
-            "description": "Search current session reflection records by keyword, emotion tag, focus area, or report content.",
+            "description": "Search current session reflection records by one or more concise keywords, emotion tags, focus areas, or report content. Separate multiple keywords with spaces, for example 焦虑 直播. Results rank by matched keyword count.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -85,8 +86,8 @@ def list_reflections_tool(session_id: str, session: Session, limit: int = 5) -> 
 
 def search_reflections_tool(session_id: str, session: Session, query: str, limit: int = 5) -> dict[str, Any]:
     safe_limit = _clamp_limit(limit)
-    normalized_query = query.strip().lower()
-    if not normalized_query:
+    terms = _search_terms(query)
+    if not terms:
         return {"records": [], "count": 0}
 
     records = session.exec(
@@ -95,20 +96,24 @@ def search_reflections_tool(session_id: str, session: Session, query: str, limit
         .order_by(ReflectionRecord.created_at.desc())
     ).all()
 
-    matched: list[dict[str, Any]] = []
+    matched: list[tuple[int, ReflectionRecord, str]] = []
     for record in records:
-        matched_reason = _matched_reason(record, normalized_query)
+        matched_reason, matched_count = _matched_reason(record, terms)
         if not matched_reason:
             continue
+
+        matched.append((matched_count, record, matched_reason))
+
+    matched.sort(key=lambda item: (item[0], item[1].created_at), reverse=True)
+    result_records: list[dict[str, Any]] = []
+    for _, record, matched_reason in matched[:safe_limit]:
         item = _reflection_summary(record)
         item["matched_reason"] = matched_reason
-        matched.append(item)
-        if len(matched) >= safe_limit:
-            break
+        result_records.append(item)
 
     return {
-        "records": matched,
-        "count": len(matched),
+        "records": result_records,
+        "count": len(result_records),
         "query": query,
     }
 
@@ -162,7 +167,16 @@ def _reflection_summary(record: ReflectionRecord) -> dict[str, Any]:
     }
 
 
-def _matched_reason(record: ReflectionRecord, query: str) -> str:
+def _search_terms(query: str) -> list[str]:
+    normalized_query = query.strip().lower()
+    if not normalized_query:
+        return []
+
+    terms = re.split(r"[\s,，、;；。！？!?]+", normalized_query)
+    return list(dict.fromkeys(term for term in terms if term))
+
+
+def _matched_reason(record: ReflectionRecord, terms: list[str]) -> tuple[str, int]:
     fields = {
         "事件描述": record.event_text,
         "情绪标签": record.emotion_tags,
@@ -171,10 +185,13 @@ def _matched_reason(record: ReflectionRecord, query: str) -> str:
         "身体反应": record.body_reaction,
         "AI 报告": record.ai_report,
     }
-    for label, value in fields.items():
-        if query in (value or "").lower():
-            return f"{label}匹配 {query}"
-    return ""
+    matched_reasons: list[str] = []
+    for term in terms:
+        for label, value in fields.items():
+            if term in (value or "").lower():
+                matched_reasons.append(f"{label}匹配 {term}")
+                break
+    return "；".join(matched_reasons), len(matched_reasons)
 
 
 def _build_event_summary(event_text: str, max_length: int = 40) -> str:
@@ -192,4 +209,3 @@ def _truncate_text(text: str) -> str:
 
 def _clamp_limit(limit: int) -> int:
     return min(max(limit, 1), 10)
-

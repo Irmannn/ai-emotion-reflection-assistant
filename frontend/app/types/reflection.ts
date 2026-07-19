@@ -61,3 +61,27 @@ export type AgentChatResponse = {
   answer: string;
   tool_calls: AgentToolCall[];
 };
+
+export type AgentConversation = {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AgentMessage = {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  status: "completed" | "pending" | "failed";
+  model: string | null;
+  duration_ms: number | null;
+  error_message: string | null;
+  created_at: string;
+  tool_calls: AgentToolCall[];
+};
+
+export type AgentConversationMessages = {
+  conversation: AgentConversation;
+  messages: AgentMessage[];
+};

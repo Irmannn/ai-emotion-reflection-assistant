@@ -19,7 +19,14 @@ TOOL_REGISTRY: dict[str, ToolFunction] = {
 }
 
 
-def execute_tool_call(tool_name: str, raw_arguments: str, session_id: str, session: Session) -> ToolExecutionResult:
+def execute_tool_call(
+    tool_name: str,
+    raw_arguments: str,
+    session_id: str,
+    session: Session,
+    conversation_id: str | None = None,
+    assistant_message_id: int | None = None,
+) -> ToolExecutionResult:
     arguments = _parse_arguments(raw_arguments)
     tool = TOOL_REGISTRY.get(tool_name)
 
@@ -32,7 +39,7 @@ def execute_tool_call(tool_name: str, raw_arguments: str, session_id: str, sessi
             status="error",
             error_message=f"Unknown tool: {tool_name}",
         )
-        _save_tool_call_log(session_id, result, session)
+        _save_tool_call_log(session_id, result, session, conversation_id, assistant_message_id)
         return result
 
     try:
@@ -63,7 +70,7 @@ def execute_tool_call(tool_name: str, raw_arguments: str, session_id: str, sessi
             error_message=type(exc).__name__,
         )
 
-    _save_tool_call_log(session_id, result, session)
+    _save_tool_call_log(session_id, result, session, conversation_id, assistant_message_id)
     return result
 
 
@@ -87,10 +94,18 @@ def _summarize_tool_result(tool_name: str, content: dict[str, Any]) -> str:
     return "工具执行完成"
 
 
-def _save_tool_call_log(session_id: str, result: ToolExecutionResult, session: Session) -> None:
+def _save_tool_call_log(
+    session_id: str,
+    result: ToolExecutionResult,
+    session: Session,
+    conversation_id: str | None,
+    assistant_message_id: int | None,
+) -> None:
     session.add(
         AgentToolCallLog(
             session_id=session_id,
+            conversation_id=conversation_id,
+            assistant_message_id=assistant_message_id,
             tool_name=result.tool_name,
             arguments_json=_truncate(json.dumps(result.arguments, ensure_ascii=False), MAX_ARGUMENTS_LOG_LENGTH),
             result_summary=_truncate(result.result_summary, MAX_RESULT_SUMMARY_LENGTH),
@@ -105,4 +120,3 @@ def _truncate(text: str, max_length: int) -> str:
     if len(text) <= max_length:
         return text
     return f"{text[:max_length]}..."
-

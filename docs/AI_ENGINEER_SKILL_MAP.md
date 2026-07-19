@@ -110,7 +110,8 @@ MVP 必做：
 
 ### 阶段 12：生产化与简历展示
 
-- LLM Evals / 回归评测、Tracing、Prompt 版本、Token 成本统计。
+- LLM Evals / 回归评测、Prompt 版本、Token 成本统计。
+- 评估后接入 LangSmith，记录 Agent / RAG 调用链 Trace，并基于固定测试集进行评测；接入前确认情绪复盘数据的脱敏与第三方数据边界。
 - 自动重试、主备模型降级、限流、缓存和异常处理。
 - Docker / 部署 / CI/CD、README、截图、项目亮点和简历描述。
 - 可选 WebSocket 长任务进度练习；文本生成场景继续优先使用 SSE。

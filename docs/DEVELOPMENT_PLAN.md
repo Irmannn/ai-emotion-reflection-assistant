@@ -215,7 +215,8 @@
 
 - 记录真实 Token 用量、调用成本、模型、耗时和错误类型。
 - 实现可重试错误的指数退避、主备模型降级和基础限流。
-- 增加结构化日志、Tracing、Prompt 版本和回归评测。
+- 增加结构化日志、Prompt 版本和回归评测。
+- 评估后接入 LangSmith：用于 Agent / RAG 调用链 Tracing 与固定测试集评测；接入前确认真实情绪复盘内容的脱敏与第三方数据边界。
 - 完成 Docker Compose、GitHub Actions、部署说明、README 截图和简历项目描述。
 - 可选练习：WebSocket 长任务进度或用户中止 Agent 任务；正常文本生成继续使用 SSE。
 

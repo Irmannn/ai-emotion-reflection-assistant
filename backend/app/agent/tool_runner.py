@@ -1,21 +1,31 @@
 import json
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 from sqlmodel import Session
 
 from app.agent.schemas import ToolExecutionResult
-from app.agent.tools import get_reflection_detail_tool, list_reflections_tool, search_reflections_tool
+from app.agent.tools import (
+    get_reflection_detail_tool,
+    list_reflections_tool,
+    search_knowledge_base_tool,
+    search_reflections_tool,
+)
 from app.models import AgentToolCallLog
 
 MAX_ARGUMENTS_LOG_LENGTH = 1000
 MAX_RESULT_SUMMARY_LENGTH = 240
 
 ToolFunction = Callable[..., dict[str, Any]]
+AsyncToolFunction = Callable[..., Awaitable[dict[str, Any]]]
 
 TOOL_REGISTRY: dict[str, ToolFunction] = {
     "list_reflections": list_reflections_tool,
     "search_reflections": search_reflections_tool,
     "get_reflection_detail": get_reflection_detail_tool,
+}
+
+ASYNC_TOOL_REGISTRY: dict[str, AsyncToolFunction] = {
+    "search_knowledge_base": search_knowledge_base_tool,
 }
 
 
@@ -74,6 +84,59 @@ def execute_tool_call(
     return result
 
 
+async def execute_tool_call_async(
+    tool_name: str,
+    raw_arguments: str,
+    session_id: str,
+    session: Session,
+    conversation_id: str | None = None,
+    assistant_message_id: int | None = None,
+) -> ToolExecutionResult:
+    """Run an async tool, or preserve the existing sync execution path."""
+    tool = ASYNC_TOOL_REGISTRY.get(tool_name)
+    if tool is None:
+        return execute_tool_call(
+            tool_name,
+            raw_arguments,
+            session_id,
+            session,
+            conversation_id,
+            assistant_message_id,
+        )
+
+    arguments = _parse_arguments(raw_arguments)
+    try:
+        content = await tool(session_id=session_id, session=session, **arguments)
+        result = ToolExecutionResult(
+            tool_name=tool_name,
+            arguments=arguments,
+            content=content,
+            result_summary=_summarize_tool_result(tool_name, content),
+            status="success",
+        )
+    except TypeError as exc:
+        result = ToolExecutionResult(
+            tool_name=tool_name,
+            arguments=arguments,
+            content={"error": "Invalid tool arguments."},
+            result_summary="工具参数不符合要求",
+            status="error",
+            error_message=str(exc),
+        )
+    except Exception as exc:
+        result = ToolExecutionResult(
+            tool_name=tool_name,
+            arguments=arguments,
+            content={"error": "Tool execution failed."},
+            result_summary="工具执行失败",
+            status="error",
+            error_message=type(exc).__name__,
+        )
+
+    _save_tool_call_log(session_id, result, session, conversation_id, assistant_message_id)
+    return result
+
+
 def _parse_arguments(raw_arguments: str) -> dict[str, Any]:
     if not raw_arguments:
         return {}
@@ -91,6 +154,8 @@ def _summarize_tool_result(tool_name: str, content: dict[str, Any]) -> str:
         return f"查询到 {content.get('count', 0)} 条复盘记录"
     if tool_name == "get_reflection_detail":
         return "已读取复盘详情" if content.get("record") else "未找到复盘详情"
+    if tool_name == "search_knowledge_base":
+        return f"检索到 {content.get('count', 0)} 条内置资料"
     return "工具执行完成"
 
 

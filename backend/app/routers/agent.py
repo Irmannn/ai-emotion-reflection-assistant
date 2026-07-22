@@ -29,7 +29,7 @@ from app.agent.schemas import (
     AgentConversationView,
 )
 from app.database import get_session
-from app.settings import get_settings
+from app.langchain.chat_model import get_model_name
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 
@@ -106,7 +106,7 @@ async def stream_agent_conversation(
                 conversation,
                 assistant_message,
                 answer,
-                get_settings().llm_model,
+                get_model_name("agent"),
                 _duration_ms(started_at),
                 session,
             )
@@ -123,7 +123,7 @@ async def stream_agent_conversation(
                 conversation,
                 assistant_message,
                 error_message,
-                get_settings().llm_model,
+                get_model_name("agent"),
                 _duration_ms(started_at),
                 session,
             )
@@ -133,7 +133,7 @@ async def stream_agent_conversation(
                 conversation,
                 assistant_message,
                 "Agent stream was cancelled before completion.",
-                get_settings().llm_model,
+                get_model_name("agent"),
                 _duration_ms(started_at),
                 session,
             )
@@ -144,7 +144,7 @@ async def stream_agent_conversation(
                 conversation,
                 assistant_message,
                 error_message,
-                get_settings().llm_model,
+                get_model_name("agent"),
                 _duration_ms(started_at),
                 session,
             )

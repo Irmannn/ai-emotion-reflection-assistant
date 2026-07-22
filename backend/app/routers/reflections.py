@@ -9,7 +9,8 @@ from sqlmodel import Session, delete, select
 from app.database import get_session
 from app.llm_client import generate_reflection_report, stream_reflection_report
 from app.models import ReflectionRecord, ReflectionReference
-from app.rag.retrieval import RetrievedChunk, format_chunks_for_prompt, retrieve_relevant_chunks
+from app.rag.retrieval import RetrievedChunk, format_chunks_for_prompt
+from app.rag.retriever import retrieve_reflection_documents
 from app.schemas import (
     DeleteResponse,
     FeedbackUpdate,
@@ -128,7 +129,7 @@ def sse_event(event: str, data: dict[str, object]) -> str:
 
 @router.post("", response_model=ReflectionDetail, status_code=status.HTTP_201_CREATED)
 async def create_reflection(payload: ReflectionCreate, session: Session = Depends(get_session)) -> ReflectionDetail:
-    retrieved_chunks = await retrieve_relevant_chunks(payload, session)
+    _, retrieved_chunks = await retrieve_reflection_documents(payload, session)
     ai_report = await generate_reflection_report(payload, retrieved_context=format_chunks_for_prompt(retrieved_chunks))
     record = create_record_from_report(payload, ai_report, session, retrieved_chunks)
     return build_reflection_detail(record, session)
@@ -139,7 +140,7 @@ def stream_create_reflection(payload: ReflectionCreate, session: Session = Depen
     async def event_generator() -> AsyncIterator[str]:
         chunks: list[str] = []
         try:
-            retrieved_chunks = await retrieve_relevant_chunks(payload, session)
+            _, retrieved_chunks = await retrieve_reflection_documents(payload, session)
             retrieved_context = format_chunks_for_prompt(retrieved_chunks)
 
             async for content in stream_reflection_report(payload, retrieved_context=retrieved_context):

@@ -32,11 +32,15 @@ def build_retrieval_query(payload: ReflectionCreate) -> str:
 
 
 async def retrieve_relevant_chunks(payload: ReflectionCreate, session: Session, top_k: int = DEFAULT_TOP_K) -> list[RetrievedChunk]:
+    return await retrieve_chunks_for_query(build_retrieval_query(payload), session, top_k)
+
+
+async def retrieve_chunks_for_query(query: str, session: Session, top_k: int = DEFAULT_TOP_K) -> list[RetrievedChunk]:
     chunks = session.exec(select(KnowledgeChunk)).all()
     if not chunks:
         return []
 
-    query_embedding = await generate_embedding(build_retrieval_query(payload))
+    query_embedding = await generate_embedding(query)
     scored_chunks: list[RetrievedChunk] = []
 
     for chunk in chunks:

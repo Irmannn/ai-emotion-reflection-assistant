@@ -4,70 +4,10 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.models import ReflectionRecord, ReflectionReference
+from app.rag.retriever import KnowledgeBaseRetriever
 
 MAX_TOOL_RESULT_TEXT_LENGTH = 1200
-
-
-TOOL_DEFINITIONS: list[dict[str, Any]] = [
-    {
-        "type": "function",
-        "function": {
-            "name": "list_reflections",
-            "description": "List recent emotion reflection records for the current session.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "limit": {
-                        "type": "integer",
-                        "description": "Maximum number of records to return. Use 5 if unsure.",
-                        "minimum": 1,
-                        "maximum": 10,
-                    }
-                },
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "search_reflections",
-            "description": "Search current session reflection records by one or more concise keywords, emotion tags, focus areas, or report content. Separate multiple keywords with spaces, for example 焦虑 直播. Results rank by matched keyword count.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Keyword to search, for example 焦虑, 拖延, 直播, 人际关系.",
-                    },
-                    "limit": {
-                        "type": "integer",
-                        "description": "Maximum number of matching records to return. Use 5 if unsure.",
-                        "minimum": 1,
-                        "maximum": 10,
-                    },
-                },
-                "required": ["query"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "get_reflection_detail",
-            "description": "Get full detail for one reflection record in the current session.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "record_id": {
-                        "type": "integer",
-                        "description": "Reflection record ID returned by list_reflections or search_reflections.",
-                    }
-                },
-                "required": ["record_id"],
-            },
-        },
-    },
-]
+MAX_KNOWLEDGE_CONTENT_LENGTH = 1600
 
 
 def list_reflections_tool(session_id: str, session: Session, limit: int = 5) -> dict[str, Any]:
@@ -156,6 +96,36 @@ def get_reflection_detail_tool(session_id: str, session: Session, record_id: int
     }
 
 
+async def search_knowledge_base_tool(
+    session_id: str,
+    session: Session,
+    query: str,
+    limit: int = 3,
+) -> dict[str, Any]:
+    """Search shared built-in materials without accessing private reflection records."""
+    del session_id
+    safe_limit = min(max(limit, 1), 5)
+    normalized_query = query.strip()
+    if not normalized_query:
+        return {"references": [], "count": 0, "query": query}
+
+    retriever = KnowledgeBaseRetriever(session=session, top_k=safe_limit)
+    await retriever.ainvoke(normalized_query)
+    return {
+        "references": [
+            {
+                "source": item.chunk.source,
+                "title": item.chunk.title,
+                "content": _truncate_knowledge_content(item.chunk.content),
+                "score": item.score,
+            }
+            for item in retriever.latest_chunks
+        ],
+        "count": len(retriever.latest_chunks),
+        "query": normalized_query,
+    }
+
+
 def _reflection_summary(record: ReflectionRecord) -> dict[str, Any]:
     return {
         "id": record.id,
@@ -205,6 +175,12 @@ def _truncate_text(text: str) -> str:
     if len(text) <= MAX_TOOL_RESULT_TEXT_LENGTH:
         return text
     return f"{text[:MAX_TOOL_RESULT_TEXT_LENGTH]}..."
+
+
+def _truncate_knowledge_content(text: str) -> str:
+    if len(text) <= MAX_KNOWLEDGE_CONTENT_LENGTH:
+        return text
+    return f"{text[:MAX_KNOWLEDGE_CONTENT_LENGTH]}..."
 
 
 def _clamp_limit(limit: int) -> int:
